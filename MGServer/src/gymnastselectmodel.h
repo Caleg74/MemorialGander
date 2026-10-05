@@ -13,7 +13,9 @@ public:
     enum GymnastRoles {
         FullNameRole = Qt::UserRole + 1,
         AthleteIdRole,
-        EventIdRole
+        EventIdRole,
+        ApparatusListRole,
+        FinalApparatusIndexRole
     };
 
     /** Singleton */
@@ -28,6 +30,8 @@ public slots:
     bool addItem(QString gymnastFullTxt);
 
     void removeItem(QString gymnastFullTxt);
+
+    bool setFinalApparatus(int athleteId, int eventId, int apparatusIndex);
 
 protected:
     QHash<int, QByteArray> roleNames() const;

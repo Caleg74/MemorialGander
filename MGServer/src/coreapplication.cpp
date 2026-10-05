@@ -97,12 +97,20 @@ void CoreApplication::Connect()
                 this, SLOT(onGymnastChanged(QString)));
     }
 
-    QObject* createPdfBtn = m_pAppEngine->rootObjects().first()->findChild<QObject*>("btnCreatePdf");
-    if (createPdfBtn)
+    QObject* createRankingPdfBtn = m_pAppEngine->rootObjects().first()->findChild<QObject*>("btnCreatePdf");
+    if (createRankingPdfBtn)
     {
-        connect(createPdfBtn, SIGNAL(clicked()),
-                &m_cPdf, SLOT(Print()));
+        connect(createRankingPdfBtn, SIGNAL(clicked()),
+                &m_cPdf, SLOT(PrintRanking()));
     }
+
+    QObject* createLastApparatusPdfBtn = m_pAppEngine->rootObjects().first()->findChild<QObject*>("btnCreateLastApparatusPdf");
+    if (createLastApparatusPdfBtn)
+    {
+        connect(createLastApparatusPdfBtn, SIGNAL(clicked()),
+                &m_cPdf, SLOT(PrintLastApparatusStartOrder()));
+    }
+
 }
 
 void CoreApplication::onGymnastChanged(QString p_currentTxt)

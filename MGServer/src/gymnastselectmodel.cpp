@@ -1,6 +1,8 @@
 #include "GymnastSelectModel.h"
 #include <QDebug>
+#include "apparatuslist.h"
 #include "dbinterface.h"
+#include <utility>
 
 //**** STATIC MEMBER INITIALIZATION *********************
 GymnastSelectModel* GymnastSelectModel::sm_pInstance = NULL;
@@ -26,18 +28,31 @@ GymnastSelectModel::GymnastSelectModel(QObject *parent)
 
 void GymnastSelectModel::RetrieveGymnastList()
 {
+    ApparatusList::Instance()->load();
+
     QList<QStringList> p_strGymnList;
     dbInterface::Instance()->retrieveGymnastSubscriptionList(p_strGymnList);
 
-    for (int i = 0; i < p_strGymnList.size();i++)
-    {
-        QString strGymnFullTxt = p_strGymnList.at(i)[2] + ", "
-                               + p_strGymnList.at(i)[3] + ", "
-                               + "(" + p_strGymnList.at(i)[4] + ")";
+    for (const QStringList &gymnastData : std::as_const(p_strGymnList)) {
+        if (gymnastData.size() < 7) {
+            qCritical() << "RetrieveGymnastList(): incomplete gymnast data" << gymnastData;
+            continue;
+        }
 
-        GymnastSelectData cNewGymnast(p_strGymnList.at(i)[0].toInt(),
-                                      p_strGymnList.at(i)[1].toInt(),
-                                      strGymnFullTxt);
+        const QString gymnastFullText = gymnastData[2] + ", "
+                                      + gymnastData[3] + ", "
+                                      + "(" + gymnastData[4] + ")";
+        const QString gender = gymnastData[5];
+        const QStringList apparatusList = ApparatusList::Instance()->comboListForGender(gender);
+        const QString finalApparatusName = ApparatusList::Instance()->apparatusName(gymnastData[6].toInt());
+        const int finalApparatusIndex = qMax(0, apparatusList.indexOf(finalApparatusName));
+
+        GymnastSelectData cNewGymnast(gymnastData[0].toInt(),
+                                      gymnastData[1].toInt(),
+                                      gymnastFullText,
+                                      gender,
+                                      apparatusList,
+                                      finalApparatusIndex);
 
         beginInsertRows(QModelIndex(), rowCount(), rowCount());
         m_gymnastList << cNewGymnast;
@@ -61,7 +76,10 @@ bool GymnastSelectModel::addItem(QString gymnastFullTxt)
 
     if (!dbInterface::Instance()->isGymnastAlreadyRegistered(iAthleteId, iEventId))
     {
-        GymnastSelectData cNewGymnast(iAthleteId, iEventId, gymnastFullTxt);
+        const QString gender = dbInterface::Instance()->getGender(iAthleteId);
+        const QStringList apparatusList = ApparatusList::Instance()->comboListForGender(gender);
+        GymnastSelectData cNewGymnast(iAthleteId, iEventId, gymnastFullTxt,
+                                      gender, apparatusList);
 
         // Keep the UI model in sync with the database if the subscription fails.
         if (!dbInterface::Instance()->subscribeGymnasttoEvent(iAthleteId, iEventId))
@@ -108,6 +126,42 @@ void GymnastSelectModel::removeItem(QString gymnastFullTxt)
     endRemoveRows();
 }
 
+bool GymnastSelectModel::setFinalApparatus(int athleteId, int eventId, int apparatusIndex)
+{
+    for (int row = 0; row < m_gymnastList.size(); ++row) {
+        auto &gymnast = m_gymnastList[row];
+        if (gymnast.GymnastId() != athleteId || gymnast.EventId() != eventId)
+            continue;
+
+        const QStringList apparatusList = gymnast.ApparatusList();
+        if (apparatusIndex < 0 || apparatusIndex >= apparatusList.size()) {
+            qWarning() << "Invalid apparatus index" << apparatusIndex << "for athlete" << athleteId;
+            return false;
+        }
+
+        int apparatusId = 0;
+        if (apparatusIndex > 0) {
+            apparatusId = ApparatusList::Instance()->getApparatusId(
+                apparatusList[apparatusIndex], gymnast.Gender());
+            if (apparatusId <= 0)
+                return false;
+        }
+
+        if (!dbInterface::Instance()->updateFinalApparatus(athleteId, eventId, apparatusId))
+            return false;
+
+        if (gymnast.FinalApparatusIndex() != apparatusIndex) {
+            gymnast.SetFinalApparatusIndex(apparatusIndex);
+            const QModelIndex changedIndex = index(row);
+            emit dataChanged(changedIndex, changedIndex, {FinalApparatusIndexRole});
+        }
+        return true;
+    }
+
+    qWarning() << "Athlete subscription not found:" << athleteId << eventId;
+    return false;
+}
+
 int GymnastSelectModel::rowCount(const QModelIndex & parent) const {
     Q_UNUSED(parent);
     return m_gymnastList.count();
@@ -124,14 +178,20 @@ QVariant GymnastSelectModel::data(const QModelIndex & index, int role) const {
         return gymnast.GymnastId();
     else if (role == EventIdRole)
         return gymnast.EventId();
+    else if (role == ApparatusListRole)
+        return gymnast.ApparatusList();
+    else if (role == FinalApparatusIndexRole)
+        return gymnast.FinalApparatusIndex();
     return QVariant();
 }
 
 QHash<int, QByteArray> GymnastSelectModel::roleNames() const {
     QHash<int, QByteArray> roles;
-    roles[FullNameRole]   = "FullName";
-    roles[AthleteIdRole]  = "AthleteId";
-    roles[EventIdRole]    = "EventId";
+    roles[FullNameRole] = "fullName";
+    roles[AthleteIdRole] = "athleteId";
+    roles[EventIdRole] = "eventId";
+    roles[ApparatusListRole] = "apparatusList";
+    roles[FinalApparatusIndexRole] = "finalApparatusIndex";
 
     return roles;
 }

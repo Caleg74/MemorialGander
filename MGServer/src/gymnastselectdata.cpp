@@ -41,10 +41,16 @@
 
 GymnastSelectData::GymnastSelectData(const int gymnastId,
                          const int eventId,
-                         const QString &gymnastFullTxt)
+                         const QString &gymnastFullTxt,
+                         const QString &gender,
+                         const QStringList &apparatusList,
+                         int finalApparatusIndex)
     : m_gymnastId(gymnastId)
     , m_eventId(eventId)
     , m_gymnastFullTxt(gymnastFullTxt)
+    , m_gender(gender)
+    , m_apparatusList(apparatusList)
+    , m_finalApparatusIndex(finalApparatusIndex)
 {
 }
 
@@ -61,6 +67,26 @@ int GymnastSelectData::EventId() const
 QString GymnastSelectData::GymnastFullTxt() const
 {
     return m_gymnastFullTxt;
+}
+
+QString GymnastSelectData::Gender() const
+{
+    return m_gender;
+}
+
+QStringList GymnastSelectData::ApparatusList() const
+{
+    return m_apparatusList;
+}
+
+int GymnastSelectData::FinalApparatusIndex() const
+{
+    return m_finalApparatusIndex;
+}
+
+void GymnastSelectData::SetFinalApparatusIndex(int index)
+{
+    m_finalApparatusIndex = index;
 }
 
 bool operator== (const GymnastSelectData& lhs, const GymnastSelectData& rhs)

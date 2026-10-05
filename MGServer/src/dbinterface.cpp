@@ -134,7 +134,7 @@ void dbInterface::retrieveGymnastSubscriptionList(QList<QStringList>& p_strGymnL
         QSqlQuery querySportEventSub(db);
 
         const int iEventId = getCurrentEventId();
-        querySportEventSub.prepare("SELECT athlete_id, sport_event_id "
+        querySportEventSub.prepare("SELECT athlete_id, sport_event_id, final_apparatus_id "
                                    "FROM sport_event_subscriptions WHERE sport_event_id = ?");
         querySportEventSub.addBindValue(iEventId);
         querySportEventSub.exec();
@@ -143,8 +143,9 @@ void dbInterface::retrieveGymnastSubscriptionList(QList<QStringList>& p_strGymnL
         {
             const int athleteId = querySportEventSub.value(0).toInt();
             const int eventId = querySportEventSub.value(1).toInt();
+            const int finalApparatusId = querySportEventSub.value(2).toInt();
 
-            queryAthlete.prepare("SELECT id, first_name, last_name, nation_id "
+            queryAthlete.prepare("SELECT id, first_name, last_name, nation_id, gender "
                                  "FROM athlete WHERE id = ?");
             queryAthlete.addBindValue(athleteId);
             queryAthlete.exec();
@@ -162,7 +163,9 @@ void dbInterface::retrieveGymnastSubscriptionList(QList<QStringList>& p_strGymnL
                                  << QString::number(eventId)
                                  << firstName
                                  << lastName
-                                 << getNationName(queryAthlete.value(3).toInt(), NI_IocName);
+                                 << getNationName(queryAthlete.value(3).toInt(), NI_IocName)
+                                 << queryAthlete.value(4).toString().trimmed()
+                                 << QString::number(finalApparatusId);
             }
             else
             {
@@ -260,6 +263,35 @@ bool dbInterface::isGymnastAlreadyRegistered(int p_iAthleteId, int p_iEventId)
     }
 
     return bAthleteFound;
+}
+
+bool dbInterface::updateFinalApparatus(int athleteId, int eventId, int apparatusId)
+{
+    if (!m_bInitialized) {
+        qInfo() << "dbInterface::updateFinalApparatus(): Db not initialized";
+        return false;
+    }
+
+    QSqlDatabase db = QSqlDatabase::database("ConnMG");
+    QSqlQuery query(db);
+    if (apparatusId > 0) {
+        query.prepare("UPDATE sport_event_subscriptions SET final_apparatus_id = ? "
+                      "WHERE athlete_id = ? AND sport_event_id = ?");
+        query.addBindValue(apparatusId);
+    } else {
+        query.prepare("UPDATE sport_event_subscriptions SET final_apparatus_id = NULL "
+                      "WHERE athlete_id = ? AND sport_event_id = ?");
+    }
+    query.addBindValue(athleteId);
+    query.addBindValue(eventId);
+
+    if (!query.exec()) {
+        qCritical() << "Final apparatus NOT updated:" << athleteId << eventId << apparatusId;
+        qCritical() << query.lastError();
+        return false;
+    }
+
+    return true;
 }
 
 void dbInterface::updateForceScore(const int p_iEventId,

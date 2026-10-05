@@ -42,17 +42,25 @@
 ****************************************************************************/
 
 #include <QString>
+#include <QStringList>
 
 class GymnastSelectData
 {
 public:
     GymnastSelectData(const int gymnastId,
                       const int eventId,
-                      const QString &gymnastFullTxt);
+                      const QString &gymnastFullTxt,
+                      const QString &gender,
+                      const QStringList &apparatusList,
+                      int finalApparatusIndex = 0);
 
     int GymnastId() const;
     int EventId() const;
     QString GymnastFullTxt() const;
+    QString Gender() const;
+    QStringList ApparatusList() const;
+    int FinalApparatusIndex() const;
+    void SetFinalApparatusIndex(int index);
 
     friend bool operator== (const GymnastSelectData& lhs, const GymnastSelectData& rhs);
 
@@ -60,6 +68,9 @@ private:
     int m_gymnastId;
     int m_eventId;
     QString m_gymnastFullTxt;
+    QString m_gender;
+    QStringList m_apparatusList;
+    int m_finalApparatusIndex;
 };
 
 #endif // GYMNASTSELECTDATA_H

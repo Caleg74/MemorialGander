@@ -48,6 +48,10 @@ public:
 
     void FillComboList(ComboBoxModel * const p_pCbbModel, QString p_strGender, bool p_bNoSelectionPresent = true);
 
+    QStringList comboListForGender(const QString &gender, bool includePlaceholder = true) const;
+
+    QString apparatusName(int apparatusId) const;
+
     int getApparatusId(EApparatusMen p_eApparatusMen);
     int getApparatusId(EApparatusWomen p_eApparatusWomen);
     int getApparatusId(const QString& p_strApparatusName, const QString &p_strGender);

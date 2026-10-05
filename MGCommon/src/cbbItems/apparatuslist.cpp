@@ -83,23 +83,31 @@ void ApparatusList::RetrieveFromDb()
 
 void ApparatusList::FillComboList(ComboBoxModel* const p_pCbbModel, QString p_strGender, bool p_bNoSelectionPresent)
 {
-    QStringList tmp;
+    p_pCbbModel->setComboList(comboListForGender(p_strGender, p_bNoSelectionPresent));
+}
 
-    // which content is
-    if (p_bNoSelectionPresent)
-    {
-        tmp << "Attrezzo..";
+QStringList ApparatusList::comboListForGender(const QString &gender, bool includePlaceholder) const
+{
+    QStringList apparatusNames;
+    if (includePlaceholder)
+        apparatusNames << QStringLiteral("Attrezzo..");
+
+    for (const auto *apparatus : m_ApparatusList) {
+        if (apparatus->getGender() == gender)
+            apparatusNames << apparatus->getName(ApparatusData::ALangIt);
     }
 
-    for (int i=0; i<m_ApparatusList.count(); i++)
-    {
-        if (m_ApparatusList.at(i)->getGender() == p_strGender)
-        {
-            tmp << m_ApparatusList.at(i)->getName(ApparatusData::ALangIt);
-        }
+    return apparatusNames;
+}
+
+QString ApparatusList::apparatusName(int apparatusId) const
+{
+    for (const auto *apparatus : m_ApparatusList) {
+        if (apparatus->getId() == apparatusId)
+            return apparatus->getName(ApparatusData::ALangIt);
     }
 
-    p_pCbbModel->setComboList(tmp);
+    return {};
 }
 
 int ApparatusList::getApparatusId(EApparatusMen p_eApparatusMen)

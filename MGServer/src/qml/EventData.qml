@@ -22,39 +22,23 @@ Item {
 
             // Row 1
             Text {
-                id: eventYear
-                width: 100
-                text: qsTr("Anno")
+                id: idCreateLastApparatusPdf
+                width: 150
+                text: qsTr("Attrezzo finale")
                 font.pointSize: 15
             }
 
-            StyleMGTextInput {
-                id: txtYear
-                width: 200
-                activeFocusOnPress: true
-                placeholderText: "YYYY"
+            StyleMGPushButton {
+                id:btnCreateLastApparatusPdf
+                objectName: "btnCreateLastApparatusPdf"
+                width: 100
+                buttonText: "Crea PDF"
             }
-
 
             // Row 2
             Text {
-                id: eventName
-                width: 100
-                text: qsTr("Nome")
-                font.pointSize: 15
-            }
-
-            StyleMGTextInput {
-                id: txtName
-                width: 400
-                activeFocusOnPress: true
-                placeholderText: "Memorial.."
-            }
-
-            // Row 3
-            Text {
                 id: idCreatePdf
-                width: 100
+                width: 150
                 text: qsTr("Classifiche")
                 font.pointSize: 15
             }

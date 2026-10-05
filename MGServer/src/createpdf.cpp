@@ -20,7 +20,7 @@ void CreatePdf::retriveGymnastList()
     m_cRank.createLists();
 }
 
-void CreatePdf::Print()
+void CreatePdf::PrintRanking()
 {
     retriveGymnastList();
     // 1st update the scores
@@ -70,6 +70,32 @@ void CreatePdf::Print()
     }
 }
 
+void CreatePdf::PrintLastApparatusStartOrder()
+{
+    retriveGymnastList();
+    // 1st update the scores
+    //m_cRank.updateAllroundScores();
+
+    QString strFileName = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+
+    strFileName += "/MemorialGander2024.pdf";
+
+    m_printer.setOutputFormat(QPrinter::PdfFormat);
+    m_printer.setPageSize(QPageSize::A4);
+    m_printer.setOutputFileName(strFileName);
+
+    if (! m_painter.begin(&m_printer)) { // failed to open file
+        qWarning("failed to open file, is it writable?");
+        return;
+    }
+
+    m_iPageNumber = 1;
+    //PrintMenAllround(true);
+
+    m_painter.end();
+
+    qDebug() << "File created in " << strFileName;
+}
 void CreatePdf::PrintMenAllround(bool p_bHFImages)
 {
     QString html;

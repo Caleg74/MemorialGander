@@ -25,6 +25,8 @@ public:
 
     bool isGymnastAlreadyRegistered(int p_iAthleteId, int p_iEventId);
 
+    bool updateFinalApparatus(int athleteId, int eventId, int apparatusId);
+
     int getNationId(QString& p_strNiceName);
 
     void updateForceScore(const int p_iEventId,

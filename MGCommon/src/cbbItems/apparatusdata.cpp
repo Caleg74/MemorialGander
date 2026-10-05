@@ -16,12 +16,12 @@ int ApparatusData::getId() const
     return m_iApparatusId;
 }
 
-QString& ApparatusData::getName(ApparatusLanguage_t p_eLang)
+const QString& ApparatusData::getName(ApparatusLanguage_t p_eLang) const
 {
     return m_strName[p_eLang];
 }
 
-QString& ApparatusData::getGender()
+const QString& ApparatusData::getGender() const
 {
     return m_strGender;
 }

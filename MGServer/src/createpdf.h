@@ -16,7 +16,8 @@ public:
     void retriveGymnastList();
 
 public slots:
-    void Print();
+    void PrintRanking();
+    void PrintLastApparatusStartOrder();
 
 private:
 

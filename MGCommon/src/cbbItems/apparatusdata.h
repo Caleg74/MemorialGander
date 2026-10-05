@@ -24,9 +24,9 @@ public:
 
     int getId() const;
 
-    QString& getName(ApparatusLanguage_t p_eLang);
+    const QString& getName(ApparatusLanguage_t p_eLang) const;
 
-    QString& getGender();
+    const QString& getGender() const;
 private:
 
     int m_iApparatusId;
