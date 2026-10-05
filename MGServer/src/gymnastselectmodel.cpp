@@ -45,13 +45,13 @@ void GymnastSelectModel::RetrieveGymnastList()
     }
 }
 
-void GymnastSelectModel::addItem(QString gymnastFullTxt)
+bool GymnastSelectModel::addItem(QString gymnastFullTxt)
 {
     QStringList strSplit = gymnastFullTxt.split(',');
     if (strSplit.count() < 2)
     {
         qCritical() << "addItem(): first/last name formatting error";
-        return;
+        return false;
     }
     QString firstName = strSplit.at(0).trimmed();
     QString lastName =  strSplit.at(1).trimmed();
@@ -63,17 +63,22 @@ void GymnastSelectModel::addItem(QString gymnastFullTxt)
     {
         GymnastSelectData cNewGymnast(iAthleteId, iEventId, gymnastFullTxt);
 
-        // add it to the database
-        dbInterface::Instance()->subscribeGymnasttoEvent(iAthleteId, iEventId);
+        // Keep the UI model in sync with the database if the subscription fails.
+        if (!dbInterface::Instance()->subscribeGymnasttoEvent(iAthleteId, iEventId))
+            return false;
 
         beginInsertRows(QModelIndex(), rowCount(), rowCount());
         m_gymnastList << cNewGymnast;
         endInsertRows();
+
+        return true;
     }
     else
     {
         qWarning() << "Athlete " << gymnastFullTxt << " already present";
     }
+
+    return false;
 }
 
 void GymnastSelectModel::removeItem(QString gymnastFullTxt)

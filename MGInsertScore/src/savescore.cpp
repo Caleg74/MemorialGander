@@ -1,11 +1,9 @@
 #include "savescore.h"
 #include <qdebug.h>
-#include "messagebox.h"
+#include <cmath>
 #include "dbinterface.h"
 
 
-// static member initialization
-SaveScore* SaveScore::sm_instance = NULL;
 
 
 SaveScore::SaveScore(QObject* parent)
@@ -14,17 +12,8 @@ SaveScore::SaveScore(QObject* parent)
 
 }
 
-SaveScore* SaveScore::Instance()
-{
-    if (sm_instance == NULL)
-    {
-        sm_instance = new SaveScore();
-    }
 
-    return sm_instance;
-}
-
-void SaveScore::onSaveScore(QString p_strGymnastFullTxt,
+bool SaveScore::onSaveScore(QString p_strGymnastFullTxt,
                             QString p_strApparatus,
                             QString p_strDifficultyScore,
                             QString p_strExecutionScore,
@@ -73,25 +62,24 @@ void SaveScore::onSaveScore(QString p_strGymnastFullTxt,
         strErr += "La nota finale non é tra 0 e 20";
     }
 
-    // save it to DB
-    SendToDb(p_strGymnastFullTxt, p_strApparatus, fDifficultyScore, fExecutionScore, fPenaltyScore, fFinalScore, p_bFinalApparatus);
-
-    // Show it to the user
+    // Reject invalid input before attempting a database write.
     if ((!bConvDifficultyScoreOk) || (!bConvExecutionScoreOk) || (!bConvPenaltyScoreOk) || (!bConvFinalScoreOk))
     {
-        MessageBox cMsgBox;
-        cMsgBox.SetTitle("Warning");
-        cMsgBox.SetText(strErr);
-        cMsgBox.Show();
+        emit messageRequested(tr("Warning"), strErr);
+        return false;
     }
+    const bool saved = SendToDb(p_strGymnastFullTxt, p_strApparatus, fDifficultyScore, fExecutionScore, fPenaltyScore, fFinalScore, p_bFinalApparatus);
+    if (!saved)
+        emit messageRequested(tr("Salvataggio fallito"), tr("Il punteggio non è stato salvato. Verifica la selezione e la connessione."));
+    return saved;
 }
 
 float SaveScore::CheckDifficultyScore(QString p_strInputVal, bool* bOk)
 {
-    float fScore = p_strInputVal.toFloat(bOk);
+    float fScore = p_strInputVal.replace(',', '.').toFloat(bOk);
     if (*bOk)
     {
-        if ((fScore < 0.0) || (fScore > 10.0))
+        if (!std::isfinite(fScore) || (fScore < 0.0) || (fScore > 10.0))
         {
             *bOk = false;
         }
@@ -102,10 +90,10 @@ float SaveScore::CheckDifficultyScore(QString p_strInputVal, bool* bOk)
 
 float SaveScore::CheckExecutionScore(QString p_strInputVal, bool* bOk)
 {
-    float fScore = p_strInputVal.toFloat(bOk);
+    float fScore = p_strInputVal.replace(',', '.').toFloat(bOk);
     if (*bOk)
     {
-        if ((fScore < 0.0) || (fScore > 20.0))
+        if (!std::isfinite(fScore) || (fScore < 0.0) || (fScore > 20.0))
         {
             *bOk = false;
         }
@@ -116,10 +104,10 @@ float SaveScore::CheckExecutionScore(QString p_strInputVal, bool* bOk)
 
 float SaveScore::CheckPenaltyScore(QString p_strInputVal, bool* bOk)
 {
-    float fScore = p_strInputVal.toFloat(bOk);
+    float fScore = p_strInputVal.replace(',', '.').toFloat(bOk);
     if (*bOk)
     {
-        if ((fScore < 0.0) || (fScore > 10.0))
+        if (!std::isfinite(fScore) || (fScore < 0.0) || (fScore > 10.0))
         {
             *bOk = false;
         }
@@ -130,10 +118,10 @@ float SaveScore::CheckPenaltyScore(QString p_strInputVal, bool* bOk)
 
 float SaveScore::CheckFinalScore(QString p_strInputVal, bool* bOk)
 {
-    float fScore = p_strInputVal.toFloat(bOk);
+    float fScore = p_strInputVal.replace(',', '.').toFloat(bOk);
     if (*bOk)
     {
-        if ((fScore < 0.0) || (fScore > 20.0))
+        if (!std::isfinite(fScore) || (fScore < 0.0) || (fScore > 20.0))
         {
             *bOk = false;
         }
@@ -142,7 +130,7 @@ float SaveScore::CheckFinalScore(QString p_strInputVal, bool* bOk)
     return fScore;
 }
 
-void SaveScore::SendToDb(QString& p_strGymnastFullTxt,
+bool SaveScore::SendToDb(QString& p_strGymnastFullTxt,
                          QString& p_strApparatus,
                          float p_fDifficultyScore,
                          float p_fExecutionScore,
@@ -154,7 +142,7 @@ void SaveScore::SendToDb(QString& p_strGymnastFullTxt,
     if (strSplit.count() < 2)
     {
         qCritical() << "SendToDb(): first/last name formatting error";
-        return;
+        return false;
     }
 
     QString firstName = strSplit.at(0).trimmed();
@@ -165,19 +153,22 @@ void SaveScore::SendToDb(QString& p_strGymnastFullTxt,
     int iEventId = dbInterface::Instance()->getCurrentEventId();
     int iApparatusId = dbInterface::Instance()->getApparatusId(p_strApparatus, strGender);
 
+    if (iAthleteId <= 0 || iEventId <= 0 || iApparatusId <= 0)
+        return false;
+
     bool bScorePresent = dbInterface::Instance()->isScorePresent(iEventId, iAthleteId, iApparatusId);
 
     if (bScorePresent)
     {
         // update existing score
-        dbInterface::Instance()->updateScore(iEventId, iAthleteId,
+        return dbInterface::Instance()->updateScore(iEventId, iAthleteId,
                                              iApparatusId, p_fDifficultyScore, p_fExecutionScore,
                                              p_fPenaltyScore, p_fFinalScore, p_bFinalApparatus);
     }
     else
     {
         // insert a new one
-        dbInterface::Instance()->setNewScore(iEventId, iAthleteId,
+        return dbInterface::Instance()->setNewScore(iEventId, iAthleteId,
                                              iApparatusId, p_fDifficultyScore, p_fExecutionScore,
                                              p_fPenaltyScore, p_fFinalScore, p_bFinalApparatus);
     }

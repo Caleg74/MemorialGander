@@ -76,30 +76,36 @@ void dbIfaceBase::getEventSelectedGymnastList(QStringList* p_pList, bool p_bMen,
         QSqlQuery query(db);
         int iEventId = getCurrentEventId();
 
-        QString strQuery = "";
+        QString strQuery;
+        QString gender;
         if (p_bMen && p_bWomen)
         {
             strQuery = "SELECT first_name, last_name, gender, nation_id FROM event_athlete_vw WHERE"
-                               " sport_event_id = "   + QString::number(iEventId, 10);
+                       " sport_event_id = ?";
         }
         else if (p_bMen)
         {
             strQuery = "SELECT first_name, last_name, gender, nation_id FROM event_athlete_vw WHERE"
-                               " sport_event_id = "   + QString::number(iEventId, 10) +
-                               " AND gender = 'M'"; // as CHAR
+                       " sport_event_id = ? AND gender = ?";
+            gender = "M";
         }
         else if (p_bWomen)
         {
             strQuery = "SELECT first_name, last_name, gender, nation_id FROM event_athlete_vw WHERE"
-                               " sport_event_id = "   + QString::number(iEventId, 10) +
-                               " AND gender = 'F'"; // as CHAR
+                       " sport_event_id = ? AND gender = ?";
+            gender = "F";
         }
         else
         {
-            qWarning() << "At least M o F must be selected";
+            *p_pList << "Seleziona ginnasti..";
+            return;
         }
 
-        query.exec(strQuery);
+        query.prepare(strQuery);
+        query.addBindValue(iEventId);
+        if (!gender.isEmpty())
+            query.addBindValue(gender);
+        query.exec();
 
         while(query.next())
         {
@@ -111,6 +117,7 @@ void dbIfaceBase::getEventSelectedGymnastList(QStringList* p_pList, bool p_bMen,
         }
 
 //        qSort(*p_pList);
+//        qInfo() << *p_pList;
 
         // put it at the beginning
         p_pList->insert(p_pList->begin(), "Seleziona ginnasti..");
@@ -130,7 +137,9 @@ int dbIfaceBase::getNationId(QString& p_strNiceName)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        query.exec("SELECT id,nicename FROM nations WHERE nicename = '" + p_strNiceName + "'");
+        query.prepare("SELECT id, nicename FROM nations WHERE nicename = ?");
+        query.addBindValue(p_strNiceName);
+        query.exec();
 
         if (query.first())
         {
@@ -158,7 +167,9 @@ QString dbIfaceBase::getNationName(int p_iNationId, enum NationInfo infoType)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        query.exec("SELECT id,nicename,ioc,iso FROM nations WHERE id = '" + QString::number(p_iNationId, 10) + "'");
+        query.prepare("SELECT id, nicename, ioc, iso FROM nations WHERE id = ?");
+        query.addBindValue(p_iNationId);
+        query.exec();
 
         if (query.first())
         {
@@ -198,14 +209,11 @@ int dbIfaceBase::getGymnastId(QString& p_firstName, QString& p_lastName)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        // SQL quesries with Apostrophe doesn't work, you need to double it
-        QString strQueryFirstName = p_firstName;
-        QString strQueryLastName = p_lastName;
-        strQueryFirstName.replace("'", "''");
-        strQueryLastName.replace("'", "''");
-
-        query.exec("SELECT id, first_name, last_name FROM athlete WHERE first_name = '" + strQueryFirstName + "'"
-                   " AND last_name = '" + strQueryLastName + "'");
+        query.prepare("SELECT id, first_name, last_name FROM athlete "
+                      "WHERE first_name = ? AND last_name = ?");
+        query.addBindValue(p_firstName);
+        query.addBindValue(p_lastName);
+        query.exec();
 
         if (query.first())
         {
@@ -233,11 +241,10 @@ int dbIfaceBase::getApparatusId(QString& p_apparatusName, QString& p_gender)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        QString strQuery = "SELECT id, name_it FROM apparatus WHERE name_it = '"
-                + p_apparatusName + "' AND gender = '"
-                + p_gender + "'";
-
-        query.exec(strQuery);
+        query.prepare("SELECT id, name_it FROM apparatus WHERE name_it = ? AND gender = ?");
+        query.addBindValue(p_apparatusName);
+        query.addBindValue(p_gender);
+        query.exec();
 
         if (query.first())
         {
@@ -266,7 +273,9 @@ QString dbIfaceBase::getGender(int p_iAthleteId)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        query.exec("SELECT id, gender FROM athlete WHERE id = " + QString::number(p_iAthleteId, 10));
+        query.prepare("SELECT id, gender FROM athlete WHERE id = ?");
+        query.addBindValue(p_iAthleteId);
+        query.exec();
 
         if (query.first())
         {
@@ -319,10 +328,12 @@ void dbIfaceBase::retrieveGymnastEventList(QList<QStringList>& p_strGymnList)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        int iEventId = getCurrentEventId();
+        const int iEventId = getCurrentEventId();
 
-        query.exec("SELECT first_name, last_name, gender, nation_id FROM event_athlete_vw WHERE "
-                   " sport_event_id = " + QString::number(iEventId, 10));
+        query.prepare("SELECT first_name, last_name, gender, nation_id "
+                      "FROM event_athlete_vw WHERE sport_event_id = ?");
+        query.addBindValue(iEventId);
+        query.exec();
 
         while(query.next())
         {
@@ -355,8 +366,8 @@ int dbIfaceBase::getCurrentEventId()
 
         while (query.next())
         {
-//            if (query.value(1).toString().startsWith(QString::number(m_iCurrentYear, 10)))    // ORI
-            if (query.value(1).toString().startsWith(QString::number(2024, 10)))    // just for test
+            if (query.value(1).toString().startsWith(QString::number(m_iCurrentYear, 10)))    // ORI
+//            if (query.value(1).toString().startsWith(QString::number(2026, 10)))    // just for test
             {
                 eventId = query.value(0).toInt();
             }
@@ -386,12 +397,12 @@ bool dbIfaceBase::isScorePresent(const int p_iEventId,
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        QString strQuery = "SELECT sport_event_id, athlete_id, apparatus_id FROM scores WHERE"
-                   " sport_event_id = "   + QString::number(p_iEventId, 10) +
-                   " AND athlete_id = "   + QString::number(p_iAthleteId, 10)+
-                   " AND apparatus_id = " + QString::number(p_iApparatusId, 10);
-
-        query.exec(strQuery);
+        query.prepare("SELECT sport_event_id, athlete_id, apparatus_id FROM scores "
+                      "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?");
+        query.addBindValue(p_iEventId);
+        query.addBindValue(p_iAthleteId);
+        query.addBindValue(p_iApparatusId);
+        query.exec();
         bEntryPresent = query.first();
 
 
@@ -441,14 +452,14 @@ float dbIfaceBase::getDifficultyScore(const int p_iAthleteId, const int p_iAppar
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        int iEventId = getCurrentEventId();
+        const int iEventId = getCurrentEventId();
 
-         QString strQuery = "SELECT difficulty_score FROM scores WHERE "
-                   " sport_event_id = "   + QString::number(iEventId, 10) +
-                   " AND athlete_id = "   + QString::number(p_iAthleteId, 10)+
-                   " AND apparatus_id = " + QString::number(p_iApparatusId, 10);
-
-         query.exec(strQuery);
+        query.prepare("SELECT difficulty_score FROM scores "
+                      "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?");
+        query.addBindValue(iEventId);
+        query.addBindValue(p_iAthleteId);
+        query.addBindValue(p_iApparatusId);
+        query.exec();
 
         while (query.next())
         {
@@ -479,14 +490,14 @@ float dbIfaceBase::getFinalScore(const int p_iAthleteId, const int p_iApparatusI
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        int iEventId = getCurrentEventId();
+        const int iEventId = getCurrentEventId();
 
-        QString strQuery = "SELECT final_score FROM scores WHERE "
-                  " sport_event_id = "   + QString::number(iEventId, 10) +
-                  " AND athlete_id = "   + QString::number(p_iAthleteId, 10)+
-                  " AND apparatus_id = " + QString::number(p_iApparatusId, 10);
-
-        query.exec(strQuery);
+        query.prepare("SELECT final_score FROM scores "
+                      "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?");
+        query.addBindValue(iEventId);
+        query.addBindValue(p_iAthleteId);
+        query.addBindValue(p_iApparatusId);
+        query.exec();
 
         while (query.next())
         {
@@ -515,14 +526,15 @@ AllScores dbIfaceBase::getAllScores(const int p_iAthleteId, const int p_iApparat
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        int iEventId = getCurrentEventId();
+        const int iEventId = getCurrentEventId();
 
-        QString strQuery = "SELECT difficulty_score, execution_score, penalty_score, final_score, force_score, final_apparatus FROM scores WHERE "
-                  " sport_event_id = "   + QString::number(iEventId, 10) +
-                  " AND athlete_id = "   + QString::number(p_iAthleteId, 10)+
-                  " AND apparatus_id = " + QString::number(p_iApparatusId, 10);
-
-        query.exec(strQuery);
+        query.prepare("SELECT difficulty_score, execution_score, penalty_score, final_score, "
+                      "force_score, final_apparatus FROM scores "
+                      "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?");
+        query.addBindValue(iEventId);
+        query.addBindValue(p_iAthleteId);
+        query.addBindValue(p_iApparatusId);
+        query.exec();
 
         while (query.next())
         {
@@ -556,14 +568,14 @@ int dbIfaceBase::getForceScore(const int p_iAthleteId, const int p_iApparatusId)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        int iEventId = getCurrentEventId();
+        const int iEventId = getCurrentEventId();
 
-        QString strQuery = "SELECT force_score FROM scores WHERE "
-                  " sport_event_id = "   + QString::number(iEventId, 10) +
-                  " AND athlete_id = "   + QString::number(p_iAthleteId, 10)+
-                  " AND apparatus_id = " + QString::number(p_iApparatusId, 10);
-
-        query.exec(strQuery);
+        query.prepare("SELECT force_score FROM scores "
+                      "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?");
+        query.addBindValue(iEventId);
+        query.addBindValue(p_iAthleteId);
+        query.addBindValue(p_iApparatusId);
+        query.exec();
 
         while (query.next())
         {
@@ -592,13 +604,13 @@ float dbIfaceBase::getAllroundTotalScore(const int p_iAthleteId)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        int iEventId = getCurrentEventId();
+        const int iEventId = getCurrentEventId();
 
-        QString strQuery = "SELECT total_final_score FROM total_scores_vw WHERE "
-                  " sport_event_id = "   + QString::number(iEventId, 10) +
-                  " AND athlete_id = "   + QString::number(p_iAthleteId, 10);
-
-        query.exec(strQuery);
+        query.prepare("SELECT total_final_score FROM total_scores_vw "
+                      "WHERE sport_event_id = ? AND athlete_id = ?");
+        query.addBindValue(iEventId);
+        query.addBindValue(p_iAthleteId);
+        query.exec();
 
         while (query.next())
         {
@@ -624,11 +636,13 @@ void dbIfaceBase::retrieveChronologicalList(QList<QStringList>& p_strChronoList)
     {
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
-        int iEventId = getCurrentEventId();
+        const int iEventId = getCurrentEventId();
 
-        QString strQuery = "SELECT id, gender, fullname, nation, apparatus, difficulty_score, execution_score, penalty_score, final_score, total_score FROM chrono_list_vw WHERE "
-                   "event_id = "   + QString::number(iEventId, 10);
-        query.exec(strQuery);
+        query.prepare("SELECT id, gender, fullname, nation, apparatus, difficulty_score, "
+                      "execution_score, penalty_score, final_score, total_score "
+                      "FROM chrono_list_vw WHERE event_id = ?");
+        query.addBindValue(iEventId);
+        query.exec();
 
         while (query.next())
         {
@@ -662,15 +676,13 @@ bool dbIfaceBase::getLatestScore(const QString p_strGender, int* p_pAthleteId, i
     {
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
-        int iEventId = getCurrentEventId();
+        const int iEventId = getCurrentEventId();
 
-        QString strQuery = "SELECT id, apparatus, final_score FROM chrono_list_vw WHERE"
-                   " event_id = "   + QString::number(iEventId, 10) +
-                   " AND gender = '" + p_strGender + "'"; // as CHAR
-
-        // 	SELECT id, apparatus, final_score FROM chrono_list_vw WHERE event_id = 2 AND gender = 'M'"	QString
-
-        query.exec(strQuery);
+        query.prepare("SELECT id, apparatus, final_score FROM chrono_list_vw "
+                      "WHERE event_id = ? AND gender = ?");
+        query.addBindValue(iEventId);
+        query.addBindValue(p_strGender);
+        query.exec();
 
         if (query.first())
         {

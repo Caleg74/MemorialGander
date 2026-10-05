@@ -45,18 +45,19 @@ void GymnastDataModel::RetrieveGymnastList()
     }
 }
 
-void GymnastDataModel::addItem(QString firstName,
-                               QString lastName,
-                               QString country,
-                               QString sex)
+bool GymnastDataModel::addItem(QString firstName,
+                              QString lastName,
+                              QString country,
+                              QString sex)
 {
 
     int iNationId = dbInterface::Instance()->getNationId(country);
 
     GymnastData cNewGymnast(firstName, lastName, country, sex);
 
-    // add it to the database
-    dbInterface::Instance()->insertGymnast(firstName, lastName, sex, iNationId);
+    // Keep the UI model in sync with the database if the insert fails.
+    if (!dbInterface::Instance()->insertGymnast(firstName, lastName, sex, iNationId))
+        return false;
 
     // update combo box for gymnast selection
     GymnastSelectionList::Instance()->FillList();
@@ -64,6 +65,8 @@ void GymnastDataModel::addItem(QString firstName,
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
     m_gymnastList << cNewGymnast;
     endInsertRows();
+
+    return true;
 }
 
 void GymnastDataModel::removeItem(QString firstName, QString lastName)

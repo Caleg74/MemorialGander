@@ -28,10 +28,10 @@ public:
 
 public slots:
 
-    void addItem(QString firstName,
-                    QString lastName,
-                    QString country,
-                    QString sex);
+    bool addItem(QString firstName,
+                 QString lastName,
+                 QString country,
+                 QString sex);
 
     void removeItem(QString firstName, QString lastName);
 

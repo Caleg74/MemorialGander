@@ -23,4 +23,30 @@
         <file alias="selectedTab.svg">../MGCommon/image/selectedTab.svg</file>
         <file alias="warning_32x32.png">../MGCommon/image/warning_32x32.png</file>
     </qresource>
+    <qresource prefix="/pdf">
+        <file alias="BalanceBeam_bw.png">pdf/BalanceBeam_bw.png</file>
+        <file alias="Floor_bw.png">pdf/Floor_bw.png</file>
+        <file alias="HorizontalBar_bw.png">pdf/HorizontalBar_bw.png</file>
+        <file alias="IN_Footer_Sponsors.png">pdf/IN_Footer_Sponsors.png</file>
+        <file alias="IN_Header_LogoMG.png">pdf/IN_Header_LogoMG.png</file>
+        <file alias="IN_Men_Floor.html">pdf/IN_Men_Floor.html</file>
+        <file alias="IN_Men_HorizontalBar.html">pdf/IN_Men_HorizontalBar.html</file>
+        <file alias="IN_Men_ParallelBars.html">pdf/IN_Men_ParallelBars.html</file>
+        <file alias="IN_Men_PommelHorse.html">pdf/IN_Men_PommelHorse.html</file>
+        <file alias="IN_Men_Rings.html">pdf/IN_Men_Rings.html</file>
+        <file alias="IN_Men_Vault.html">pdf/IN_Men_Vault.html</file>
+        <file alias="IN_MenTableTitle.html">pdf/IN_MenTableTitle.html</file>
+        <file alias="IN_NoFooter.html">pdf/IN_NoFooter.html</file>
+        <file alias="IN_NoHeader.html">pdf/IN_NoHeader.html</file>
+        <file alias="IN_Women_BalanceBeam.html">pdf/IN_Women_BalanceBeam.html</file>
+        <file alias="IN_Women_Floor.html">pdf/IN_Women_Floor.html</file>
+        <file alias="IN_Women_UnevenBars.html">pdf/IN_Women_UnevenBars.html</file>
+        <file alias="IN_Women_Vault.html">pdf/IN_Women_Vault.html</file>
+        <file alias="IN_WomenTableTitle.html">pdf/IN_WomenTableTitle.html</file>
+        <file alias="ParallelBars_bw.png">pdf/ParallelBars_bw.png</file>
+        <file alias="PommelHorse_bw.png">pdf/PommelHorse_bw.png</file>
+        <file alias="Rings_bw.png">pdf/Rings_bw.png</file>
+        <file alias="UnevenBars_bw.png">pdf/UnevenBars_bw.png</file>
+        <file alias="Vault_bw.png">pdf/Vault_bw.png</file>
+    </qresource>
 </RCC>

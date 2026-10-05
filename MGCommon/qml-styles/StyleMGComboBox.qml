@@ -1,14 +1,20 @@
-import QtQuick 2.6
-import QtQuick.Controls 2.1
+pragma ComponentBehavior: Bound
+
+import QtQuick
+import QtQuick.Controls.Basic
 
 ComboBox {
     id: control
     font.pointSize: 15
+    property int maximumVisibleItems: 7
 
     delegate: ItemDelegate {
+        id: delegateItem
+        required property int index
+        required property var modelData
         width: control.width
         contentItem: Text {
-            text: modelData
+            text: delegateItem.modelData
             color: "#0a3f60"
             font: control.font
             elide: Text.ElideRight
@@ -25,12 +31,15 @@ ComboBox {
         height: 8
         contextType: "2d"
 
-//        Connections {
-//            target: control
-//            onPressedChanged: canvas.requestPaint()
-//        }
+        Connections {
+            target: control
+            function onPressedChanged() { canvas.requestPaint() }
+        }
 
         onPaint: {
+            const context = getContext("2d");
+            if (!context)
+                return;
             context.reset();
             context.moveTo(0, 0);
             context.lineTo(width, 0);
@@ -67,8 +76,11 @@ ComboBox {
         padding: 1
 
         contentItem: ListView {
+            id: popupList
             clip: true
-            implicitHeight: contentHeight
+            implicitHeight: Math.min(popupList.contentHeight,
+                                     popupList.contentHeight / Math.max(popupList.count, 1)
+                                     * control.maximumVisibleItems)
             model: control.popup.visible ? control.delegateModel : null
             currentIndex: control.highlightedIndex
 

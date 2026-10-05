@@ -35,7 +35,11 @@ void ApparatusList::Init(QQmlApplicationEngine &p_qEngine, const QString& p_strP
     QQmlContext* pComboContext = p_qEngine.rootContext();
     pComboContext->setContextProperty(p_strPropertyName, p_pCbbModel);
 
-    // move after mySQL read-out
+    load();
+}
+
+void ApparatusList::load()
+{
     if (m_ApparatusList.isEmpty())
     {
         RetrieveFromDb();

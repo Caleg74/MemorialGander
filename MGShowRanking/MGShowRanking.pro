@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += sql qml quick widgets
+QT += sql qml quick quickcontrols2 widgets
 
 CONFIG += c++11
 

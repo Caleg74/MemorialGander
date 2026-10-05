@@ -25,7 +25,7 @@ public:
 
 public slots:
 
-    void addItem(QString gymnastFullTxt);
+    bool addItem(QString gymnastFullTxt);
 
     void removeItem(QString gymnastFullTxt);
 

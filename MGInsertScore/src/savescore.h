@@ -7,10 +7,10 @@ class SaveScore : public QObject
 {
     Q_OBJECT
 public:
-    static SaveScore* Instance();
+    explicit SaveScore(QObject *parent = nullptr);
 
 public slots:
-    void onSaveScore(QString p_strGymnastFullTxt,
+    bool onSaveScore(QString p_strGymnastFullTxt,
                      QString p_strApparatus,
                      QString p_strDifficultyScore,
                      QString p_strExecutionScore,
@@ -18,8 +18,10 @@ public slots:
                      QString p_strFinalScore,
                      bool p_bFinalApparatus);
 
+signals:
+    void messageRequested(const QString &title, const QString &text);
+
 private:
-    SaveScore(QObject* parent = NULL);
 
     float CheckDifficultyScore(QString p_strInputVal, bool* bOk);
     float CheckExecutionScore(QString p_strInputVal, bool* bOk);
@@ -27,7 +29,7 @@ private:
 
     float CheckFinalScore(QString p_strInputVal, bool* bOk);
 
-    void SendToDb(QString& p_strGymnastFullTxt,
+    bool SendToDb(QString& p_strGymnastFullTxt,
                   QString& p_strApparatus,
                   float p_fDifficultyScore,
                   float p_fExecutionScore,
@@ -35,9 +37,6 @@ private:
                   float p_fFinalScore,
                   bool p_bFinalApparatus);
 
-    static SaveScore* sm_instance;
-
-    QObject* m_qMsgDialog;  ///< for pop-up
 };
 
 #endif // SAVESCORE_H

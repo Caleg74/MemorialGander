@@ -1,110 +1,59 @@
 #include "coreapplication.h"
-#include <QQmlContext>
-#include <QQuickView>
-#include "dbinterface.h"
-#include "savescore.h"
-#include "messagebox.h"
-#include <qquickitem.h>
 #include "apparatuslist.h"
-#include "gymnasteventlist.h"
+#include "dbinterface.h"
+#include <QDebug>
 
-CoreApplication::CoreApplication(QObject *parent)
-    : QObject(parent)
-    , m_pAppEngine(NULL)
+CoreApplication::CoreApplication(QObject *parent) : QObject(parent)
 {
-
+    m_gymnasts.setComboList({QStringLiteral("Seleziona ginnasti..")});
+    m_apparatus.setComboList({QStringLiteral("Attrezzo..")});
+    connect(&m_saveScore, &SaveScore::messageRequested,
+            this, &CoreApplication::messageRequested);
 }
 
-CoreApplication::~CoreApplication()
+bool CoreApplication::initialize()
 {
-
-}
-
-bool CoreApplication::Init(QQmlApplicationEngine& p_qEngine)
-{
-    if (dbInterface::Instance()->loadDriver())
-    {
-        qInfo() << "QOBCD driver loaded successfully";
-    }
-    else
-    {
+    auto *database = dbInterface::Instance();
+    if (!database->loadDriver() || !database->initDb(false)) {
+        qCritical() << "Database initialization failed:" << database->getLastError();
         return false;
     }
-
-    // initialize the database
-    if (!dbInterface::Instance()->initDb(false))
-    {
-        return false;
-    }
-
-    // save it as a class member
-    m_pAppEngine = &p_qEngine;
-
-    ApparatusList::Instance()->Init(p_qEngine, "apparatusModel", &m_pApparatusCbbModel);
-    MessageBox::SetEngine(m_pAppEngine);
-
-//    QQmlContext *ctxt = p_qEngine.rootContext();
-//    m_qProxyModel = new FilterData(this);
-
-//    m_qProxyModel->setFilterRole(GymnastDataModel::SignalSection);
-//    m_qProxyModel->setFilterRegExp("0");    // enum value of "SignalDoor"
-//    connect(pGymModel, SIGNAL(OutputChanged(unsigned int)),
-//            &m_cIoWrap, SLOT(SetOutput(unsigned int)));
-
+    ApparatusList::Instance()->load();
+    setCategories(true, true);
     return true;
 }
 
-void CoreApplication::Connect()
+void CoreApplication::selectGymnast(const QString &name)
 {
-    QObject* saveScoreBtn = m_pAppEngine->rootObjects().first()->findChild<QObject*>("btnSaveScore");
-    if (saveScoreBtn)
-    {
-        connect(saveScoreBtn, SIGNAL(saveScore(QString, QString, QString, QString, QString, QString, bool)),
-                SaveScore::Instance(), SLOT(onSaveScore(QString, QString, QString, QString, QString, QString, bool)));
+    const auto parts = name.split(',');
+    if (parts.size() < 2 || parts[0].trimmed().isEmpty() || parts[1].trimmed().isEmpty()) {
+        m_apparatus.setComboList({QStringLiteral("Attrezzo..")});
+        return;
     }
-
-    QQuickItem* cbbGymnast = m_pAppEngine->rootObjects().first()->findChild<QQuickItem*>("cbbGymnastSelection");
-    if (cbbGymnast)
-    {
-        connect(cbbGymnast, SIGNAL(selectedTextChanged(QString)),
-                this, SLOT(onGymnastChanged(QString)));
-    }
-
-    QObject* settingsPopup = m_pAppEngine->rootObjects().first()->findChild<QObject*>("popupSettings");
-    if (settingsPopup)
-    {
-        QObject::connect(settingsPopup, SIGNAL(settingsChanged(bool, bool)),
-                     this, SLOT(onSettingsChanged(bool, bool)));
-    }
+    QString firstName = parts[0].trimmed();
+    QString lastName = parts[1].trimmed();
+    auto *database = dbInterface::Instance();
+    const int athleteId = database->getGymnastId(firstName, lastName);
+    ApparatusList::Instance()->FillComboList(&m_apparatus, database->getGender(athleteId));
 }
 
-void CoreApplication::onGymnastChanged(QString p_currentTxt)
+void CoreApplication::setCategories(bool men, bool women)
 {
-    if (p_currentTxt != "Seleziona ginnasti..")
-    {
-        QStringList strSplit = p_currentTxt.split(',');
-        if (strSplit.count() < 2)
-        {
-            qDebug() << "onGymnastChanged(): first/last name formatting error";
-        }
-        QString firstName = strSplit.at(0).trimmed();
-        QString lastName =  strSplit.at(1).trimmed();
-
-        if (!firstName.isEmpty() && !lastName.isEmpty())
-        {
-            int iAthleteId = dbInterface::Instance()->getGymnastId(firstName, lastName);
-            QString strGender = dbInterface::Instance()->getGender(iAthleteId);
-
-            ApparatusList::Instance()->FillComboList(&m_pApparatusCbbModel, strGender);
-        }
-        else
-        {
-            qDebug() << "onGymnastChanged(): first/last name is empty";
-        }
-    }
+    QStringList names;
+    if (men || women)
+        dbInterface::Instance()->getEventSelectedGymnastList(&names, men, women);
+    else
+        names << QStringLiteral("Seleziona ginnasti..");
+    m_gymnasts.setComboList(names);
 }
 
-void CoreApplication::onSettingsChanged(bool p_bMlistSelected, bool p_bFlistSelected)
+bool CoreApplication::saveScore(const QString &gymnast, const QString &apparatus,
+                               const QString &difficulty, const QString &execution,
+                               const QString &penalty, const QString &finalScore, bool finalApparatus)
 {
-    GymnastEventList::Instance()->FillList(p_bMlistSelected, p_bFlistSelected);
+    if (m_gymnasts.comboList().indexOf(gymnast) <= 0 || m_apparatus.comboList().indexOf(apparatus) <= 0) {
+        emit messageRequested(tr("Selezione incompleta"), tr("Seleziona un ginnasta e un attrezzo."));
+        return false;
+    }
+    return m_saveScore.onSaveScore(gymnast, apparatus, difficulty, execution, penalty, finalScore, finalApparatus);
 }

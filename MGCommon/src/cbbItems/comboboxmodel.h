@@ -3,23 +3,24 @@
 
 #include <QObject>
 #include <QStringList>
+#include <QtQml/qqmlregistration.h>
 
 class ComboBoxModel : public QObject
 {
     Q_OBJECT
+    QML_ANONYMOUS
 
     Q_PROPERTY(QStringList comboList READ comboList WRITE setComboList NOTIFY comboListChanged)
-    Q_PROPERTY(int count READ count WRITE setCount NOTIFY countChanged)
+    Q_PROPERTY(int count READ count NOTIFY countChanged)
 
 public:
-    ComboBoxModel(QObject *parent = 0);
+    explicit ComboBoxModel(QObject *parent = nullptr);
     ComboBoxModel(const QStringList &list,int count, QObject *parent = 0);
 
-    const QStringList comboList();
+    QStringList comboList() const;
     void setComboList(const QStringList &comboList);
 
-    int count();
-    void setCount(int cnt);
+    int count() const;
 
     Q_INVOKABLE void addElement(const QString &element);
     Q_INVOKABLE void removeElement(int index);
@@ -32,7 +33,6 @@ signals:
 private:
 
     QStringList m_comboList;
-    int         m_count;
 };
 
 #endif // COMBOBOXMODEL_H

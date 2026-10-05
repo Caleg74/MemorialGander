@@ -34,7 +34,9 @@ int dbInterface::getNationId(QString& p_strNiceName)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        query.exec("SELECT id,nicename FROM nations WHERE nicename = '" + p_strNiceName + "'");
+        query.prepare("SELECT id, nicename FROM nations WHERE nicename = ?");
+        query.addBindValue(p_strNiceName);
+        query.exec();
 
         if (query.first())
         {
@@ -53,23 +55,23 @@ int dbInterface::getNationId(QString& p_strNiceName)
     return iId;
 }
 
-void dbInterface::insertGymnast(QString& p_strFirstName,
-                   QString& p_strLastName,
-                   QString& p_strGender,
-                   int p_iNationId)
+bool dbInterface::insertGymnast(const QString& p_strFirstName,
+                                const QString& p_strLastName,
+                                const QString& p_strGender,
+                                int p_iNationId)
 {
     if (m_bInitialized)
     {
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
         query.prepare("INSERT INTO athlete (first_name, last_name, gender, nation_id) "
-                           "VALUES (:first_name, :last_name, :gender, :nation_id)");
-        query.bindValue(":first_name", p_strFirstName);
-        query.bindValue(":last_name", p_strLastName);
-        query.bindValue(":gender", p_strGender);
-        query.bindValue(":nation_id", p_iNationId);
+                      "VALUES (?, ?, ?, ?)");
+        query.addBindValue(p_strFirstName);
+        query.addBindValue(p_strLastName);
+        query.addBindValue(p_strGender);
+        query.addBindValue(p_iNationId);
 
-        bool bRet = query.exec();
+        const bool bRet = query.exec();
 
         if (bRet)
         {
@@ -80,11 +82,12 @@ void dbInterface::insertGymnast(QString& p_strFirstName,
             qCritical() << "Athlete NOT added: " << p_strFirstName << " " << p_strLastName;
             qCritical() << query.lastError();
         }
+
+        return bRet;
     }
-    else
-    {
-        qInfo() << "dbInterface::insertGymnast(): Db not initialized";
-    }
+
+    qInfo() << "dbInterface::insertGymnast(): Db not initialized";
+    return false;
 }
 
 void dbInterface::deleteGymnast(QString& p_strFirstName, QString& p_strLastName)
@@ -95,15 +98,10 @@ void dbInterface::deleteGymnast(QString& p_strFirstName, QString& p_strLastName)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        // SQL quesries with Apostrophe doesn't work, you need to double it
-        QString strQueryFirstName = p_strFirstName;
-        QString strQueryLastName = p_strLastName;
-        strQueryFirstName.trimmed().replace("'", "''");
-        strQueryLastName.trimmed().replace("'", "''");
-
-        QString strQuery = "DELETE FROM athlete WHERE first_name='" + strQueryFirstName
-                + "' AND last_name='" + strQueryLastName + "'";
-        bool bRet = query.exec(strQuery);
+        query.prepare("DELETE FROM athlete WHERE first_name = ? AND last_name = ?");
+        query.addBindValue(p_strFirstName.trimmed());
+        query.addBindValue(p_strLastName.trimmed());
+        const bool bRet = query.exec();
 
         if (bRet)
         {
@@ -135,16 +133,21 @@ void dbInterface::retrieveGymnastSubscriptionList(QList<QStringList>& p_strGymnL
         QSqlQuery queryAthlete(db);
         QSqlQuery querySportEventSub(db);
 
-        int iEventId = getCurrentEventId();
-        querySportEventSub.exec("SELECT athlete_id, sport_event_id FROM sport_event_subscriptions WHERE "
-                  " sport_event_id = "   + QString::number(iEventId, 10));
+        const int iEventId = getCurrentEventId();
+        querySportEventSub.prepare("SELECT athlete_id, sport_event_id "
+                                   "FROM sport_event_subscriptions WHERE sport_event_id = ?");
+        querySportEventSub.addBindValue(iEventId);
+        querySportEventSub.exec();
 
         while (querySportEventSub.next())
         {
-            QString athleteId = querySportEventSub.value(0).toString();
-            QString eventId = querySportEventSub.value(1).toString();
+            const int athleteId = querySportEventSub.value(0).toInt();
+            const int eventId = querySportEventSub.value(1).toInt();
 
-            queryAthlete.exec("SELECT id, first_name, last_name, nation_id FROM athlete WHERE id=" + athleteId);
+            queryAthlete.prepare("SELECT id, first_name, last_name, nation_id "
+                                 "FROM athlete WHERE id = ?");
+            queryAthlete.addBindValue(athleteId);
+            queryAthlete.exec();
 
             QStringList gymnastSubscript;
             if (queryAthlete.first())
@@ -155,8 +158,8 @@ void dbInterface::retrieveGymnastSubscriptionList(QList<QStringList>& p_strGymnL
                 QString lastName = queryAthlete.value(2).toString().trimmed();
 
                 // add full name
-                gymnastSubscript << athleteId
-                                 << eventId
+                gymnastSubscript << QString::number(athleteId)
+                                 << QString::number(eventId)
                                  << firstName
                                  << lastName
                                  << getNationName(queryAthlete.value(3).toInt(), NI_IocName);
@@ -175,18 +178,18 @@ void dbInterface::retrieveGymnastSubscriptionList(QList<QStringList>& p_strGymnL
     }
 }
 
-void dbInterface::subscribeGymnasttoEvent(int athleteId, int eventId)
+bool dbInterface::subscribeGymnasttoEvent(int athleteId, int eventId)
 {
     if (m_bInitialized)
     {
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
         query.prepare("INSERT INTO sport_event_subscriptions (athlete_id, sport_event_id) "
-                           "VALUES (:athlete_id, :sport_event_id)");
-        query.bindValue(":athlete_id", athleteId);
-        query.bindValue(":sport_event_id", eventId);
+                      "VALUES (?, ?)");
+        query.addBindValue(athleteId);
+        query.addBindValue(eventId);
 
-        bool bRet = query.exec();
+        const bool bRet = query.exec();
 
         if (bRet)
         {
@@ -194,14 +197,15 @@ void dbInterface::subscribeGymnasttoEvent(int athleteId, int eventId)
         }
         else
         {
-            qCritical() << "Athlete NOT sunscribed: " << athleteId << " to event: " << eventId;
+            qCritical() << "Athlete NOT subscribed: " << athleteId << " to event: " << eventId;
             qCritical() << query.lastError();
         }
+
+        return bRet;
     }
-    else
-    {
-        qInfo() << "dbInterface::subscribeGymnasttoEvent(): Db not initialized";
-    }
+
+    qInfo() << "dbInterface::subscribeGymnasttoEvent(): Db not initialized";
+    return false;
 }
 
 void dbInterface::deleteGymnastSubsscription(int athleteId, int eventId)
@@ -210,11 +214,11 @@ void dbInterface::deleteGymnastSubsscription(int athleteId, int eventId)
     {
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
-        QString strQuery = "DELETE FROM sport_event_subscriptions WHERE "
-                           "athlete_id ='" + QString::number(athleteId, 10) + "' AND "
-                           "sport_event_id='" + QString::number(eventId, 10) + "'";
-
-        bool bRet = query.exec(strQuery);
+        query.prepare("DELETE FROM sport_event_subscriptions "
+                      "WHERE athlete_id = ? AND sport_event_id = ?");
+        query.addBindValue(athleteId);
+        query.addBindValue(eventId);
+        const bool bRet = query.exec();
 
         if (bRet)
         {
@@ -242,9 +246,12 @@ bool dbInterface::isGymnastAlreadyRegistered(int p_iAthleteId, int p_iEventId)
         QSqlQuery querySportEventSub(db);
 
 
-        querySportEventSub.exec("SELECT athlete_id, sport_event_id FROM sport_event_subscriptions WHERE "
-                                "athlete_id ='" + QString::number(p_iAthleteId, 10) + "' AND "
-                                "sport_event_id='" + QString::number(p_iEventId, 10) + "'");
+        querySportEventSub.prepare("SELECT athlete_id, sport_event_id "
+                                   "FROM sport_event_subscriptions "
+                                   "WHERE athlete_id = ? AND sport_event_id = ?");
+        querySportEventSub.addBindValue(p_iAthleteId);
+        querySportEventSub.addBindValue(p_iEventId);
+        querySportEventSub.exec();
 
         if (querySportEventSub.first())
         {
@@ -267,12 +274,12 @@ void dbInterface::updateForceScore(const int p_iEventId,
         // UPDATE table_name
         //SET column1=value1,column2=value2,...
         //WHERE some_column=some_value;
-        query.prepare("UPDATE scores SET force_score = :force_score "
-                      "WHERE sport_event_id=:sport_event_id AND athlete_id=:athlete_id AND apparatus_id=:apparatus_id");
-        query.bindValue(":force_score", QString::number(p_iForceScore, 'g', 6));
-        query.bindValue(":sport_event_id", p_iEventId);
-        query.bindValue(":athlete_id", p_iAthleteId);
-        query.bindValue(":apparatus_id", p_iApparatusId);
+        query.prepare("UPDATE scores SET force_score = ? "
+                      "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?");
+        query.addBindValue(p_iForceScore);
+        query.addBindValue(p_iEventId);
+        query.addBindValue(p_iAthleteId);
+        query.addBindValue(p_iApparatusId);
 
         bool bRet = query.exec();
 
@@ -305,9 +312,8 @@ void dbInterface::eraseAllForcedScore(const int p_iEventId)
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
 
-        query.prepare("UPDATE scores SET force_score = 0 "
-                      "WHERE sport_event_id=:sport_event_id");
-        query.bindValue(":sport_event_id", p_iEventId);
+        query.prepare("UPDATE scores SET force_score = 0 WHERE sport_event_id = ?");
+        query.addBindValue(p_iEventId);
 
         bool bRet = query.exec();
 

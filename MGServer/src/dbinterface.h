@@ -10,16 +10,16 @@ public:
 
     static dbInterface* Instance();
 
-    void insertGymnast(QString& p_strFirstName,
-                       QString& p_strLastName,
-                       QString& p_strGender,
+    bool insertGymnast(const QString& p_strFirstName,
+                       const QString& p_strLastName,
+                       const QString& p_strGender,
                        int p_iNationId);
 
     void deleteGymnast(QString& p_strFirstName, QString& p_strLastName);
 
     void retrieveGymnastSubscriptionList(QList<QStringList> &p_strGymnList);
 
-    void subscribeGymnasttoEvent(int athleteId, int eventId);
+    bool subscribeGymnasttoEvent(int athleteId, int eventId);
 
     void deleteGymnastSubsscription(int athleteId, int eventId);
 

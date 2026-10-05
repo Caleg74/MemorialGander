@@ -90,13 +90,16 @@ Item {
                         id: addMouseArea
                         anchors.fill: parent
                         onClicked: {
-                            GymnastDataModel.sourceModel.addItem(txtFirstName.text, txtLastName.text,
-                                                        cbbCountry.currentText, cbbSex.currentText)
-                            // remove fields for next input
-                            txtFirstName.text = ""
-                            txtLastName.text = ""
-                            cbbCountry.currentIndex = 0
-                            cbbSex.currentIndex = 0
+                            const added = GymnastDataModel.sourceModel.addItem(
+                                            txtFirstName.text, txtLastName.text,
+                                            cbbCountry.currentText, cbbSex.currentText)
+                            if (added) {
+                                // Remove fields only after a successful insert.
+                                txtFirstName.text = ""
+                                txtLastName.text = ""
+                                cbbCountry.currentIndex = 0
+                                cbbSex.currentIndex = 0
+                            }
                         }
                     }
                 }

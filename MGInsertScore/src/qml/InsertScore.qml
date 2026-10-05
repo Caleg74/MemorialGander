@@ -1,12 +1,25 @@
 import QtQuick
 import QtQuick.Controls
+import Memorial.InsertScore
 
 Item {
+    id: scoreForm
+    objectName: "scoreForm"
+    required property ScoreController controller
     width: parent.width
     height: parent.height
 
+    Connections {
+        target: scoreForm.controller
+        function onMessageRequested(title, text) {
+            messageDialog.title = title
+            messageDialog.text = text
+            messageDialog.open()
+        }
+    }
+
     property string finalScore : "0.000"
-    property bool gymnastDefined
+    readonly property bool gymnastDefined: cbbGymnastSelection.currentIndex > 0 && cbbAppartus.currentIndex > 0
     property int nbrOfReferees : 4
     property bool allowEmptyScore: false
 
@@ -28,9 +41,9 @@ Item {
 
     function setExclBackground(score)
     {
-        var penaltylist2 = [txtPenalty1, txtPenalty2, txtPenalty3, txtPenalty4]
+        let penaltylist2 = [txtPenalty1, txtPenalty2, txtPenalty3, txtPenalty4]
 
-        var i
+        let i
         for (i=penaltylist2.length-1; i>=0; i--)
         {
             if (parseFloat(penaltylist2[i].text.replace(",", ".")) === parseFloat(score))
@@ -45,13 +58,13 @@ Item {
     }
 
     function sortPenaltyScores() {
-        var precision = 4;
-        // var penaltylist = [parseFloat(txtPenalty1.text.replace(",", ".")),
+        let precision = 4;
+        // let penaltylist = [parseFloat(txtPenalty1.text.replace(",", ".")),
         //                    parseFloat(txtPenalty2.text.replace(",", ".")),
         //                    parseFloat(txtPenalty3.text.replace(",", ".")),
         //                    parseFloat(txtPenalty4.text.replace(",", "."))]
 
-        var penaltylist1 = [parseFloat(txtPenalty1.text.replace(",", ".")),
+        let penaltylist1 = [parseFloat(txtPenalty1.text.replace(",", ".")),
                            parseFloat(txtPenalty2.text.replace(",", ".")),
                            parseFloat(txtPenalty3.text.replace(",", ".")),
                            parseFloat(txtPenalty4.text.replace(",", "."))]
@@ -73,7 +86,7 @@ Item {
     }
 
     function floatToString(num, precision) {
-        var str;
+        let str;
         str = num.toFixed(Math.min(precision-1, num.toString().substr(num.toString().indexOf(".")+1).length));
         str = str.slice(0, (str.indexOf(".")) + precision + 1);
         str = str.padEnd(str.indexOf(".") + precision, '0')
@@ -81,7 +94,7 @@ Item {
     }
 
     function calcFinalScore() {
-        var precision = 4;
+        let precision = 4;
         if (gymnastDefined)
         {
             if (nbrOfReferees == 2)
@@ -96,7 +109,7 @@ Item {
 
             txtExecutionScore.text = floatToString(10.000 - parseFloat(txtAvgPenalty.text), precision)
 
-            var fFinalScore = ( parseFloat(txtDifficultyScore.text.replace(",", "."))
+            let fFinalScore = ( parseFloat(txtDifficultyScore.text.replace(",", "."))
                               + parseFloat(txtExecutionScore.text.replace(",", "."))
                               - parseFloat(txtPenaltyScore.text.replace(",", ".")))
 
@@ -128,7 +141,7 @@ Item {
         interval: 60*1000        // 60s
         running: false
         repeat: false
-        onTriggered: timerCallback()
+        onTriggered: scoreForm.timerCallback()
         onTriggeredOnStartChanged: console.log("Timer"+timer.running)
     }
 
@@ -155,15 +168,12 @@ Item {
                 StyleMGComboBox {
                     id: cbbGymnastSelection
                     objectName: "cbbGymnastSelection"
-                    model: gymnastEventModel.comboList
+                    model: scoreForm.controller.gymnasts.comboList
                     width: parent.parent.width/2
 //                    activeFocusOnPress: true
                     KeyNavigation.tab: cbbAppartus
                     currentIndex: 0
-                    signal selectedTextChanged(string currentTxt)
-                    onCurrentTextChanged: {
-                        selectedTextChanged(currentText)
-                    }
+                    onCurrentTextChanged: scoreForm.controller.selectGymnast(currentText)
                 }
             }
 
@@ -172,7 +182,8 @@ Item {
 
                 StyleMGComboBox {
                     id: cbbAppartus
-                    model: apparatusModel.comboList
+                    objectName: "apparatusSelection"
+                    model: scoreForm.controller.apparatus.comboList
                     width: parent.parent.width/10*4
 //                    activeFocusOnPress: true
 //                    visible: cbbGymnastSelection.currentIndex > 0
@@ -180,17 +191,8 @@ Item {
                     currentIndex: 0
 
                     onCurrentIndexChanged: {
-                        if (currentIndex !== 0)
-                        {
-                            gymnastDefined = true
-                            console.log("gymnastDefined = true")
-                        }
-                        else
-                        {
-                            gymnastDefined = false
-                            console.log("gymnastDefined = false")
-                            resetValues()
-                        }
+                        if (currentIndex <= 0)
+                            scoreForm.resetValues()
                     }
                 }
 
@@ -217,6 +219,7 @@ Item {
 
                         StyleMGTextInput {
                             id: txtDifficultyScore
+                            objectName: "difficultyScore"
                             width: 100
                             activeFocusOnPress: true
         //                    style:textEditMGStyle
@@ -224,7 +227,7 @@ Item {
                             text: "0.000"
                             font.pointSize: 15
                             KeyNavigation.tab: txtPenalty1
-                            onTextChanged: calcFinalScore()
+                            onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
                                    selectAll()
@@ -280,7 +283,7 @@ Item {
                             text: "0.000"
                             font.pointSize: 15
                             KeyNavigation.tab: txtDifficultyScore
-                            onTextChanged: calcFinalScore()
+                            onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
                                    selectAll()
@@ -344,7 +347,7 @@ Item {
                             text: "0.000"
                             font.pointSize: 15
                             KeyNavigation.tab: txtPenalty2
-                            onTextChanged: calcFinalScore()
+                            onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
                                    selectAll()
@@ -372,7 +375,7 @@ Item {
                             text: "0.000"
                             font.pointSize: 15
                             KeyNavigation.tab: txtPenalty3
-                            onTextChanged: calcFinalScore()
+                            onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
                                    selectAll()
@@ -401,7 +404,7 @@ Item {
                             text: "0.000"
                             font.pointSize: 15
                             KeyNavigation.tab: txtPenalty4
-                            onTextChanged: calcFinalScore()
+                            onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
                                    selectAll()
@@ -430,7 +433,7 @@ Item {
                             text: "0.000"
                             font.pointSize: 15
                             KeyNavigation.tab: txtPenaltyScore
-                            onTextChanged: calcFinalScore()
+                            onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
                                    selectAll()
@@ -448,7 +451,7 @@ Item {
                     width: parent.parent.width/5
                     activeFocusOnPress: false
                     readOnly: true
-                    text: finalScore
+                    text: scoreForm.finalScore
                     font.pointSize: 15
                     font.bold: true
                 }
@@ -459,19 +462,12 @@ Item {
                     width: 110
                     height: 40
                     buttonText: "Registra"
-                    signal saveScore(string gymnastName,
-                                     string apparatus,
-                                     string difficultyScore,
-                                     string executionScore,
-                                     string penaltyScore,
-                                     string finalScore,
-                                     bool finalApparatus)
 
-                    enabled: ((parseFloat(txtDifficultyScore.text.replace(",", ".")) > 0.0) || allowEmptyScore)
-                             && (cbbGymnastSelection.currentIndex >= 0)
-                             && (cbbAppartus.currentIndex >= 0)
+                    enabled: ((parseFloat(txtDifficultyScore.text.replace(",", ".")) > 0.0) || scoreForm.allowEmptyScore)
+                             && (cbbGymnastSelection.currentIndex > 0)
+                             && (cbbAppartus.currentIndex > 0)
                     onClicked: {
-                        saveScore(cbbGymnastSelection.currentText,
+                        const saved = scoreForm.controller.saveScore(cbbGymnastSelection.currentText,
                                   cbbAppartus.currentText,
                                   txtDifficultyScore.text,
                                   txtExecutionScore.text,
@@ -479,8 +475,10 @@ Item {
                                   txtFinalScore.text,
                                   chkFinalApparatus.checked)
 
-                        resetValues()
-                        cbbAppartus.currentIndex = 0
+                        if (saved) {
+                            scoreForm.resetValues()
+                            cbbAppartus.currentIndex = 0
+                        }
 
 
                     }
@@ -501,7 +499,6 @@ Item {
             modal: true
             focus: true
             spacing: 10
-            signal settingsChanged(bool MList, bool FList)
 
             background: Rectangle {
                     color: "#e0e0e0"
@@ -536,17 +533,12 @@ Item {
 
                     StyleMGComboBox {
                         id: cbbRefereeNbr
-                        objectName: "cbbGymnastSelection"
-                        //model: gymnastEventModel.comboList
+                        objectName: "cbbRefereeNbr"
                         width: 40
                         font.pointSize: 12
                         model: ["2", "4"]
         //                    activeFocusOnPress: true
-                        currentIndex: 0
-                        signal selectedTextChanged(string currentTxt)
-                        onCurrentTextChanged: {
-                            selectedTextChanged(currentText)
-                        }
+                        currentIndex: scoreForm.nbrOfReferees === 2 ? 0 : 1
                     }
                 }
 
@@ -561,11 +553,13 @@ Item {
 
                     StyleMGCheckbox {
                         id: chkListM
+                        objectName: "categoryMen"
                         checked: true
                         text: "M"
                     }
                     StyleMGCheckbox {
                         id: chkListF
+                        objectName: "categoryWomen"
                         checked: true
                         text: "F"
                     }
@@ -590,27 +584,28 @@ Item {
                 root.opacity = 1
                 if (cbbRefereeNbr.currentIndex === 0) // = 2 referrees
                 {
-                    nbrOfReferees = 2;
+                    scoreForm.nbrOfReferees = 2;
                     rowReferee3.visible = false;
                     rowReferee4.visible = false;
                 }
                 else if (cbbRefereeNbr.currentIndex === 1) // = 4 referres
                 {
-                    nbrOfReferees = 4;
+                    scoreForm.nbrOfReferees = 4;
                     rowReferee3.visible = true;
                     rowReferee4.visible = true;
                 }
 
-                resetValues()
+                scoreForm.resetValues()
 
-                settingsChanged(chkListM.checked, chkListF.checked)
+                scoreForm.controller.setCategories(chkListM.checked, chkListF.checked)
 
-                enableSaveEmptyScore(true)
+                scoreForm.enableSaveEmptyScore(true)
                 timer.start()
             }
         }
 
         StyleMGMsgBox {
+            id: messageDialog
             visible: false
         }
         Button {
@@ -622,8 +617,8 @@ Item {
             font.pointSize: 18
 
             background: Rectangle {
-                    color: parent.down ? "#bbbbbb" :
-                            (parent.hovered ? "#d6d6d6" : "transparent")
+                    color: btnSettings.down ? "#bbbbbb" :
+                            (btnSettings.hovered ? "#d6d6d6" : "transparent")
             }
             onClicked: popupSettings.open()
         }

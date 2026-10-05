@@ -1,90 +1,40 @@
-//Import the declarative plugins
-  import QtQuick 2.0
+import QtQuick
+import QtQuick.Controls.Basic
 
-  //Implementation of the Button control.
-  Item {
-      id: button
-      width: 30
-      height: 30
-      property alias buttonText: innerText.text;
-      property color color: "white"
-      property color hoverColor: "#aaaaaa"
-      property color pressColor: "#83d1f5"
-      property int fontSize: 15
-      property int borderWidth: 2
-      property int borderRadius: 5
-      scale: state === "Pressed" ? 0.96 : 1.0
-      onEnabledChanged: state = ""
-      signal clicked
+Button {
+    id: control
+    implicitWidth: 30
+    implicitHeight: 30
+    property alias buttonText: control.text
+    property color color: "white"
+    property color hoverColor: "#aaaaaa"
+    property color pressColor: "#83d1f5"
+    property int fontSize: 15
+    property int borderWidth: 2
+    property int borderRadius: 5
 
-      //define a scale animation
-      Behavior on scale {
-          NumberAnimation {
-              duration: 100
-              easing.type: Easing.InOutQuad
-          }
-      }
+    hoverEnabled: true
+    scale: down ? 0.96 : 1.0
+    Behavior on scale {
+        NumberAnimation { duration: 100; easing.type: Easing.InOutQuad }
+    }
 
-      //Rectangle to draw the button
-      Rectangle {
-          id: rectangleButton
-          anchors.fill: parent
-          radius: borderRadius
-          color: button.enabled ? button.color : "lightgrey"
-          border.width: borderWidth
-          border.color: "#0a3f60"
+    contentItem: Text {
+        text: control.text
+        font.pointSize: control.fontSize
+        renderType: Text.NativeRendering
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        color: "black"
+    }
 
-          Text {
-              id: innerText
-              renderType: Text.NativeRendering
-              font.pointSize: fontSize
-              anchors.centerIn: parent
-          }
-      }
-
-      //change the color of the button in differen button states
-      states: [
-          State {
-              name: "Hovering"
-              PropertyChanges {
-                  target: rectangleButton
-                  color: hoverColor
-              }
-          },
-          State {
-              name: "Pressed"
-              PropertyChanges {
-                  target: rectangleButton
-                  color: pressColor
-              }
-          }
-      ]
-
-      //define transmission for the states
-      transitions: [
-          Transition {
-              from: ""; to: "Hovering"
-              ColorAnimation { duration: 200 }
-          },
-          Transition {
-              from: "*"; to: "Pressed"
-              ColorAnimation { duration: 10 }
-          }
-      ]
-
-      //Mouse area to react on click events
-      MouseArea {
-          hoverEnabled: true
-          anchors.fill: button
-          onEntered: { button.state='Hovering'}
-          onExited: { button.state=''}
-          onClicked: { button.clicked();}
-          onPressed: { button.state="Pressed" }
-          onReleased: {
-              if (containsMouse)
-                button.state="Hovering";
-              else
-                button.state="";
-          }
-      }
-  }
+    background: Rectangle {
+        radius: control.borderRadius
+        color: !control.enabled ? "lightgrey"
+               : control.down ? control.pressColor
+               : control.hovered ? control.hoverColor : control.color
+        border.width: control.borderWidth
+        border.color: "#0a3f60"
+        Behavior on color { ColorAnimation { duration: control.down ? 10 : 200 } }
+    }
+}

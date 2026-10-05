@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/qml">
-        <file alias="StyleMGTabWidget.qml">../MGCommon/qml-styles/StyleMGTabWidget.qml</file>
         <file alias="StyleMGComboBox.qml">../MGCommon/qml-styles/StyleMGComboBox.qml</file>
         <file alias="StyleMGCheckbox.qml">../MGCommon/qml-styles/StyleMGCheckbox.qml</file>
         <file alias="StyleMGTextInput.qml">../MGCommon/qml-styles/StyleMGTextInput.qml</file>

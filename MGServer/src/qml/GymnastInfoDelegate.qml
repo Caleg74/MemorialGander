@@ -1,8 +1,8 @@
-import QtQuick 2.0
+import QtQuick
 
 Item {
     id: listItemDelegate
-    width: parent.width - 50
+    width: ListView.view ? ListView.view.width - 50 : 0
     height: 50
 
     BorderImage {

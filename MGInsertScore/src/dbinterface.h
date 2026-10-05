@@ -11,7 +11,7 @@ public:
 
     int getNationId(QString& p_strNiceName);
 
-    void setNewScore(const int p_iEventId,
+    bool setNewScore(const int p_iEventId,
                      const int p_iAthleteId,
                      const int p_iApparatusId,
                      const float p_fDifficultyScore,
@@ -20,7 +20,7 @@ public:
                      const float p_fFinalScore,
                      const bool p_bFinalApparatus);
 
-    void updateScore(const int p_iEventId,
+    bool updateScore(const int p_iEventId,
                      const int p_iAthleteId,
                      const int p_iApparatusId,
                      const float p_fDifficultyScore,

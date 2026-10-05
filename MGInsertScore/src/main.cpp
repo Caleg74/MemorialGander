@@ -1,31 +1,23 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QDebug>
+#include <QQuickStyle>
+#include <cstdlib>
 #include "coreapplication.h"
-#include "gymnasteventlist.h"
 
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    QCoreApplication::setApplicationName(QStringLiteral("MGInsertScore"));
+    QQuickStyle::setStyle(QStringLiteral("Basic"));
 
+    // The controller and its models must outlive the QML engine.
+    CoreApplication controller;
+    if (!controller.initialize())
+        return EXIT_FAILURE;
     QQmlApplicationEngine engine;
-
-    CoreApplication cCoreApp;
-
-    if (!cCoreApp.Init(engine))
-    {
-        qCritical() << "Initalization failed, application closed";
-    }
-
-    GymnastEventList::Instance()->Init(engine);
-    engine.load(QUrl(QStringLiteral("qrc:qml/main.qml")));
-
-    cCoreApp.Connect();   // connect all signals from the UI
-
-//    QObject *topLevel = engine.rootObjects().value(0);
-//    QQuickWindow *window = qobject_cast<QQuickWindow *>(topLevel);
-//    window->show();
-
+    engine.setInitialProperties({{QStringLiteral("controller"), QVariant::fromValue(&controller)}});
+    engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+    if (engine.rootObjects().isEmpty())
+        return EXIT_FAILURE;
     return app.exec();
-    return 0;
-} 
+}

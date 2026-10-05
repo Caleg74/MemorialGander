@@ -60,6 +60,7 @@ private:
     void AddFooter(bool p_bHFImages);
 
     void AddPageNumber();
+    void DrawHtml(const QString& html);
 
     QTextStream m_textStream;
 

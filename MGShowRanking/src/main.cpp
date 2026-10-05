@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQuickStyle>
 #include <QQuickWindow>
 #include <QDebug>
 #include "coreapplication.h"
@@ -21,12 +22,14 @@ int main(int argc, char ** argv)
 
     QGuiApplication app(argc, argv);
 
-    QQmlApplicationEngine engine;
-
+    QQuickStyle::setStyle("Basic");
     CoreApplication cCoreApp;
+    QQmlApplicationEngine engine;
     if (cCoreApp.Init(engine))
     {
-        engine.load(QUrl(QStringLiteral("qrc:qml/main.qml")));
+        engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+        if (engine.rootObjects().isEmpty())
+            return 1;
 
         cCoreApp.Connect();   // connect all signals from the UI
 

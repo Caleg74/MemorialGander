@@ -53,9 +53,10 @@ Item {
                         id: addMouseArea
                         anchors.fill: parent
                         onClicked: {
-                            GymnastSelectModel.sourceModel.addItem(cbbGymnastSelection.currentText)
-                            // remove fields for next input
-                            cbbGymnastSelection.currentIndex = 0
+                            const added = GymnastSelectModel.sourceModel.addItem(
+                                            cbbGymnastSelection.currentText)
+                            if (added)
+                                cbbGymnastSelection.currentIndex = 0
                         }
                     }
                 }

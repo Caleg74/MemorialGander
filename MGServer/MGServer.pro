@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += sql qml quick widgets printsupport
+QT += sql qml quick quickcontrols2 widgets printsupport
 CONFIG += c++11
 
 RC_ICONS = ../MGCommon/image/ApplicationRed.ico

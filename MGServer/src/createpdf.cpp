@@ -1,8 +1,9 @@
 #include "createpdf.h"
 #include <QFile>
 #include <QDebug>
-#include <QTextCursor>
 #include <QStandardPaths>
+#include <QStringList>
+#include <QUrl>
 
 
 CreatePdf::CreatePdf()
@@ -71,167 +72,69 @@ void CreatePdf::Print()
 
 void CreatePdf::PrintMenAllround(bool p_bHFImages)
 {
-    QTextDocument doc;
-    QTextCursor cur(&doc);
-
-    if (QFile::exists("../MGServer/pdf/OUT_MenAllround.html"))
-        QFile::remove("../MGServer/pdf/OUT_MenAllround.html");
-    QFile fileOut("../MGServer/pdf/OUT_MenAllround.html");
-    if(!fileOut.open(QIODevice::ReadWrite)) {
-        qDebug() << "Unable to open file " << fileOut.errorString();
-    }
-    QTextStream out(&fileOut);
+    QString html;
+    QTextStream out(&html);
 
     PrintHeader(p_bHFImages, out);
-
-
-//    //    QWebView web;
-////    web.setHtml(strLocalText);
-////    web.print(&printer);
-
-////    cur.movePosition(QTextCursor::Start);
-////    cur.insertText("Ciao!");
-
     PrintMenTableTitle(out);
-
     PrintMenTableBody(out);
-
     PrintFooter(p_bHFImages, out);
 
-    // Read the output files and import it as html document
-    fileOut.close();
-    QFile fileIn("../MGServer/pdf/OUT_MenAllround.html");
-    if(!fileIn.open(QIODevice::ReadOnly)) {
-        qDebug() << "Unable to open file " << fileIn.errorString();
-    }
-    QTextStream strReadOutCompleteFile(&fileIn);
-    cur.insertHtml(strReadOutCompleteFile.readAll());
-    fileIn.close();
-
-    //    QWebView web;
-//    web.setHtml(strLocalText);
-//    web.print(&printer);
-
-//    cur.movePosition(QTextCursor::Start);
-//    cur.insertText("Ciao!");
-
-    doc.drawContents(&m_painter);
+    out.flush();
+    DrawHtml(html);
 }
 
 void CreatePdf::PrintWomenAllround(bool p_bHFImages)
 {
-    QTextDocument doc;
-    QTextCursor cur(&doc);
-
-    if (QFile::exists("../MGServer/pdf/OUT_WomenAllround.html"))
-        QFile::remove("../MGServer/pdf/OUT_WomenAllround.html");
-    QFile fileOut("../MGServer/pdf/OUT_WomenAllround.html");
-    if(!fileOut.open(QIODevice::ReadWrite)) {
-        qDebug() << "Unable to open file " << fileOut.errorString();
-    }
-    QTextStream out(&fileOut);
+    QString html;
+    QTextStream out(&html);
 
     PrintHeader(p_bHFImages, out);
-
     PrintWomenTableTitle(out);
-
     PrintWomenTableBody(out);
-
     PrintFooter(p_bHFImages, out);
 
-    // Read the output files and import it as html document
-    fileOut.close();
-    QFile fileIn("../MGServer/pdf/OUT_WomenAllround.html");
-    if(!fileIn.open(QIODevice::ReadOnly)) {
-        qDebug() << "Unable to open file " << fileIn.errorString();
-    }
-    QTextStream strReadOutCompleteFile(&fileIn);
-    cur.insertHtml(strReadOutCompleteFile.readAll());
-    fileIn.close();
-
-    doc.drawContents(&m_painter);
+    out.flush();
+    DrawHtml(html);
 }
 
 void CreatePdf::PrintAllSingleApparatusMen(bool p_bHFImages)
 {
-    QTextDocument doc;
-    QTextCursor cur(&doc);
-
     for (int apparatus = ApparatusList::AGFirstApparatus; apparatus < ApparatusList::AMApparatusMax; apparatus++)
     {
-        if (QFile::exists("../MGServer/pdf/OUT_SingleApparatusMen.html"))
-            QFile::remove("../MGServer/pdf/OUT_SingleApparatusMen.html");
-        QFile fileOut("../MGServer/pdf/OUT_SingleApparatusMen.html");
-        if(!fileOut.open(QIODevice::ReadWrite)) {
-            qDebug() << "Unable to open file " << fileOut.errorString();
-        }
-        QTextStream out(&fileOut);
+        QString html;
+        QTextStream out(&html);
 
         PrintHeader(p_bHFImages, out);
-
         m_cRank.updateSingleScores(static_cast<ApparatusList::EApparatusMen>(apparatus));
-
         PrintSingleMApparatusTableTitle(out, static_cast<ApparatusList::EApparatusMen>(apparatus));
-
         PrintSingleMApparatusTableBody(out);
-
         PrintFooter(p_bHFImages, out);
 
-        // Read the output files and import it as html document
-        fileOut.close();
-        QFile fileIn("../MGServer/pdf/OUT_SingleApparatusMen.html");
-        if(!fileIn.open(QIODevice::ReadOnly)) {
-            qDebug() << "Unable to open file " << fileIn.errorString();
-        }
-        QTextStream strReadOutCompleteFile(&fileIn);
-        cur.insertHtml(strReadOutCompleteFile.readAll());
-        fileIn.close();
-
-        doc.drawContents(&m_painter);
+        out.flush();
+        DrawHtml(html);
 
         if (! m_printer.newPage()) {
             qWarning("failed in flushing page to disk, disk full?");
         }
-        doc.clear();
     }
 }
 
 void CreatePdf::PrintAllSingleApparatusWomen(bool p_bHFImages)
 {
-    QTextDocument doc;
-    QTextCursor cur(&doc);
-
     for (int apparatus = ApparatusList::AGFirstApparatus; apparatus < ApparatusList::AWApparatusMax; apparatus++)
     {
-        if (QFile::exists("../MGServer/pdf/OUT_SingleApparatusWomen.html"))
-            QFile::remove("../MGServer/pdf/OUT_SingleApparatusWomen.html");
-        QFile fileOut("../MGServer/pdf/OUT_SingleApparatusWomen.html");
-        if(!fileOut.open(QIODevice::ReadWrite)) {
-            qDebug() << "Unable to open file " << fileOut.errorString();
-        }
-        QTextStream out(&fileOut);
+        QString html;
+        QTextStream out(&html);
 
         PrintHeader(p_bHFImages, out);
-
         m_cRank.updateSingleScores(static_cast<ApparatusList::EApparatusWomen>(apparatus));
-
         PrintSingleWApparatusTableTitle(out, static_cast<ApparatusList::EApparatusWomen>(apparatus));
-
         PrintSingleWApparatusTableBody(out);
-
         PrintFooter(p_bHFImages, out);
 
-        // Read the output files and import it as html document
-        fileOut.close();
-        QFile fileIn("../MGServer/pdf/OUT_SingleApparatusWomen.html");
-        if(!fileIn.open(QIODevice::ReadOnly)) {
-            qDebug() << "Unable to open file " << fileIn.errorString();
-        }
-        QTextStream strReadOutCompleteFile(&fileIn);
-        cur.insertHtml(strReadOutCompleteFile.readAll());
-        fileIn.close();
-
-        doc.drawContents(&m_painter);
+        out.flush();
+        DrawHtml(html);
 
         if (apparatus != (ApparatusList::AWApparatusMax-1))
         {
@@ -239,20 +142,13 @@ void CreatePdf::PrintAllSingleApparatusWomen(bool p_bHFImages)
                 qWarning("failed in flushing page to disk, disk full?");
             }
         }
-        doc.clear();
     }
 }
 
 void CreatePdf::PrintHeader(bool p_bHFImages, QTextStream& out)
 {
     // Add header
-    QString fileName;
-    if (p_bHFImages)
-        fileName = "../MGServer/pdf/IN_NoHeader.html"; // GCA modify it
-    else
-        fileName = "../MGServer/pdf/IN_NoHeader.html";
-
-    QFile fileIn(fileName);
+    QFile fileIn(":/pdf/IN_NoHeader.html");
     if(!fileIn.open(QIODevice::ReadOnly)) {
         qDebug() << "Unable to open file " << fileIn.errorString();
     }
@@ -265,13 +161,7 @@ void CreatePdf::PrintHeader(bool p_bHFImages, QTextStream& out)
 
 void CreatePdf::PrintFooter(bool p_bHFImages, QTextStream& out)
 {
-    QString fileName;
-    if (p_bHFImages)
-        fileName = "../MGServer/pdf/IN_NoFooter.html"; // GCA modify it
-    else
-        fileName = "../MGServer/pdf/IN_NoFooter.html";
-
-    QFile fileIn(fileName);
+    QFile fileIn(":/pdf/IN_NoFooter.html");
     if(!fileIn.open(QIODevice::ReadOnly)) {
         qDebug() << "Unable to open file " << fileIn.errorString();
     }
@@ -285,7 +175,7 @@ void CreatePdf::PrintFooter(bool p_bHFImages, QTextStream& out)
 
 void CreatePdf::PrintMenTableTitle(QTextStream& out)
 {
-    QFile fileIn("../MGServer/pdf/IN_MenTableTitle.html");
+    QFile fileIn(":/pdf/IN_MenTableTitle.html");
     if(!fileIn.open(QIODevice::ReadOnly)) {
         qDebug() << "Unable to open file " << fileIn.errorString();
     }
@@ -359,7 +249,7 @@ void CreatePdf::PrintMenTableBody(QTextStream& out)
 
 void CreatePdf::PrintWomenTableTitle(QTextStream& out)
 {
-    QFile fileIn("../MGServer/pdf/IN_WomenTableTitle.html");
+    QFile fileIn(":/pdf/IN_WomenTableTitle.html");
     if(!fileIn.open(QIODevice::ReadOnly)) {
         qDebug() << "Unable to open file " << fileIn.errorString();
     }
@@ -427,27 +317,27 @@ void CreatePdf::PrintSingleMApparatusTableTitle(QTextStream& out, ApparatusList:
     switch (p_eApparatus)
     {
     case ApparatusList::EApparatusMen::AMFloor:
-        fileIn.setFileName("../MGServer/pdf/IN_Men_Floor.html");
+        fileIn.setFileName(":/pdf/IN_Men_Floor.html");
         break;
 
     case ApparatusList::EApparatusMen::AMHorizontalBar:
-        fileIn.setFileName("../MGServer/pdf/IN_Men_HorizontalBar.html");
+        fileIn.setFileName(":/pdf/IN_Men_HorizontalBar.html");
         break;
 
     case ApparatusList::EApparatusMen::AMParallelBars:
-        fileIn.setFileName("../MGServer/pdf/IN_Men_ParallelBars.html");
+        fileIn.setFileName(":/pdf/IN_Men_ParallelBars.html");
         break;
 
     case ApparatusList::EApparatusMen::AMPommelHorse:
-        fileIn.setFileName("../MGServer/pdf/IN_Men_PommelHorse.html");
+        fileIn.setFileName(":/pdf/IN_Men_PommelHorse.html");
         break;
 
     case ApparatusList::EApparatusMen::AMRings:
-        fileIn.setFileName("../MGServer/pdf/IN_Men_Rings.html");
+        fileIn.setFileName(":/pdf/IN_Men_Rings.html");
         break;
 
     case ApparatusList::EApparatusMen::AMVault:
-        fileIn.setFileName("../MGServer/pdf/IN_Men_Vault.html");
+        fileIn.setFileName(":/pdf/IN_Men_Vault.html");
         break;
 
     default:
@@ -505,19 +395,19 @@ void CreatePdf::PrintSingleWApparatusTableTitle(QTextStream& out, ApparatusList:
     switch (p_eApparatus)
     {
     case ApparatusList::EApparatusWomen::AWFloor:
-        fileIn.setFileName("../MGServer/pdf/IN_Women_Floor.html");
+        fileIn.setFileName(":/pdf/IN_Women_Floor.html");
         break;
 
     case ApparatusList::EApparatusWomen::AWBalanceBeam:
-        fileIn.setFileName("../MGServer/pdf/IN_Women_BalanceBeam.html");
+        fileIn.setFileName(":/pdf/IN_Women_BalanceBeam.html");
         break;
 
     case ApparatusList::EApparatusWomen::AWUnevenBars:
-        fileIn.setFileName("../MGServer/pdf/IN_Women_UnevenBars.html");
+        fileIn.setFileName(":/pdf/IN_Women_UnevenBars.html");
         break;
 
     case ApparatusList::EApparatusWomen::AWVault:
-        fileIn.setFileName("../MGServer/pdf/IN_Women_Vault.html");
+        fileIn.setFileName(":/pdf/IN_Women_Vault.html");
         break;
 
     default:
@@ -575,7 +465,7 @@ void CreatePdf::AddHeader(bool p_bHFImages)
     {
         QRectF target(20.0, 10.0, 496.0/3, 239.0/3);
         QRectF source(0.0, 0.0, 496.0, 239.0);
-        QImage image = QImage("../MGServer/pdf/IN_Header_LogoMG.png");
+        QImage image(":/pdf/IN_Header_LogoMG.png");
         m_painter.drawImage(target, image, source);  // Paint the mask onto the image
     }
 }
@@ -586,7 +476,7 @@ void CreatePdf::AddFooter(bool p_bHFImages)
     {
         QRectF target(20.0, 750.0, 2480.0/5, 283.0/5);
         QRectF source(0.0, 0.0, 2480.0, 283.0);
-        QImage image = QImage("../MGServer/pdf/IN_Footer_Sponsors.png");
+        QImage image(":/pdf/IN_Footer_Sponsors.png");
         m_painter.drawImage(target, image, source);  // Paint the mask onto the image
     }
 }
@@ -602,5 +492,38 @@ void CreatePdf::AddPageNumber()
 
     // inc for next page
     m_iPageNumber++;
+}
+
+void CreatePdf::DrawHtml(const QString& html)
+{
+    static const QStringList apparatusImageNames = {
+        QStringLiteral("BalanceBeam_bw.png"),
+        QStringLiteral("Floor_bw.png"),
+        QStringLiteral("HorizontalBar_bw.png"),
+        QStringLiteral("ParallelBars_bw.png"),
+        QStringLiteral("PommelHorse_bw.png"),
+        QStringLiteral("Rings_bw.png"),
+        QStringLiteral("UnevenBars_bw.png"),
+        QStringLiteral("Vault_bw.png")
+    };
+
+    QTextDocument doc;
+    for (const QString& imageName : apparatusImageNames) {
+        const QImage image(QStringLiteral(":/pdf/") + imageName);
+        if (image.isNull()) {
+            qWarning() << "Unable to load PDF apparatus image" << imageName;
+            continue;
+        }
+
+        doc.addResource(QTextDocument::ImageResource,
+                        QUrl(QStringLiteral("qrc:/pdf/") + imageName),
+                        image);
+    }
+
+    QString resourceHtml = html;
+    resourceHtml.replace(QStringLiteral("../MGServer/pdf/"),
+                         QStringLiteral("qrc:/pdf/"));
+    doc.setHtml(resourceHtml);
+    doc.drawContents(&m_painter);
 }
 

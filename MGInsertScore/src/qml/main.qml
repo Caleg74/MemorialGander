@@ -1,18 +1,15 @@
 import QtQuick
 import QtQuick.Window
-import "qrc:/qml"
+import Memorial.InsertScore
 
 Window {
     id: window
+    required property ScoreController controller
     width: 800
     height: 500
     visible: true
     title: qsTr("Memorial Gander - Insert Score")
 
-//    StyleMGCheckbox { id: checkboxMGStyle }
-    StyleMGComboBox { id: comboBoxMGStyle}
-//    StyleMGTextInput { id: textEditMGStyle}
-    StyleMGPushButton { id: buttonMGStyle}
 
     Rectangle {
         property string title: "Registra \nGinnasti"
@@ -21,6 +18,7 @@ Window {
 
         InsertScore
         {
+            controller: window.controller
             width: parent.width
             height: parent.height
             anchors.centerIn: parent

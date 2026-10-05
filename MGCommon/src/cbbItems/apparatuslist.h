@@ -44,6 +44,8 @@ public:
     /** Initializes the core application components */
     void Init(QQmlApplicationEngine &p_qEngine, const QString& p_strPropertyName, ComboBoxModel * const p_pCbbModel);
 
+    void load();
+
     void FillComboList(ComboBoxModel * const p_pCbbModel, QString p_strGender, bool p_bNoSelectionPresent = true);
 
     int getApparatusId(EApparatusMen p_eApparatusMen);
@@ -61,9 +63,9 @@ private:
 
     QList<ApparatusData*> m_ApparatusList;
 
-    int m_aiEnumToIdMen[AMApparatusMax];
+    int m_aiEnumToIdMen[AMApparatusMax] = {};
 
-    int m_aiEnumToIdWomen[AWApparatusMax];
+    int m_aiEnumToIdWomen[AWApparatusMax] = {};
 
 };
 

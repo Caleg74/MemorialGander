@@ -1,72 +1,39 @@
 #include "comboboxmodel.h"
-#include "qdebug.h"
 
-ComboBoxModel::ComboBoxModel(QObject *parent) :
-    QObject(parent)
+ComboBoxModel::ComboBoxModel(QObject *parent) : QObject(parent) {}
+
+ComboBoxModel::ComboBoxModel(const QStringList &list, int count, QObject *parent)
+    : QObject(parent), m_comboList(list)
 {
+    Q_UNUSED(count); // Compatibility overload: the list determines its size.
 }
 
-ComboBoxModel::ComboBoxModel(const QStringList &list, int count, QObject *parent) :
-    QObject(parent), m_comboList(list), m_count(count)
+QStringList ComboBoxModel::comboList() const { return m_comboList; }
+int ComboBoxModel::count() const { return static_cast<int>(m_comboList.size()); }
+
+void ComboBoxModel::setComboList(const QStringList &list)
 {
-
-}
-
-const QStringList ComboBoxModel::comboList()
-{
-    return m_comboList;
-}
-
-void ComboBoxModel::setComboList(const QStringList &comboList)
-{
-
-    if (m_comboList != comboList)
-    {
-        m_comboList = comboList;
-        emit comboListChanged();
-    }
-
-}
-
-int ComboBoxModel::count()
-{
-    return m_count;
-}
-
-void ComboBoxModel::setCount(int cnt)
-{
-    if (cnt != m_count)
-    {
-        m_count = cnt;
+    if (m_comboList == list)
+        return;
+    const bool sizeChanged = m_comboList.size() != list.size();
+    m_comboList = list;
+    emit comboListChanged();
+    if (sizeChanged)
         emit countChanged();
-    }
 }
 
 void ComboBoxModel::addElement(const QString &element)
 {
     m_comboList.append(element);
     emit comboListChanged();
-    setCount(m_comboList.count());
     emit countChanged();
-
-    for (int i = 0; i<m_count; i++)
-    {
-        qDebug() << m_comboList.at(i);
-    }
 }
 
 void ComboBoxModel::removeElement(int index)
 {
-    if (index < m_comboList.count())
-    {
-        m_comboList.removeAt(index);
-        emit comboListChanged();
-        setCount(m_comboList.count());
-        emit countChanged();
-    }
-
-    for (int i = 0; i<m_count; i++)
-    {
-        qDebug() << m_comboList.at(i);
-    }
+    if (index < 0 || index >= m_comboList.size())
+        return;
+    m_comboList.removeAt(index);
+    emit comboListChanged();
+    emit countChanged();
 }
