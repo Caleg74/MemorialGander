@@ -4,6 +4,8 @@
 #include <QStandardPaths>
 #include <QStringList>
 #include <QUrl>
+#include <QHash>
+#include "dbinterface.h"
 
 
 CreatePdf::CreatePdf()
@@ -34,9 +36,9 @@ void CreatePdf::PrintRanking()
         QString strFileName = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
 
         if (bWithLogo)
-            strFileName += "/MemorialGander2024.pdf";
+            strFileName += "/MemorialGander2026.pdf";
         else
-            strFileName += "/MemorialGander2024_NoImage.pdf";
+            strFileName += "/MemorialGander2026_NoImage.pdf";
 
         m_printer.setOutputFormat(QPrinter::PdfFormat);
         m_printer.setPageSize(QPageSize::A4);
@@ -73,12 +75,10 @@ void CreatePdf::PrintRanking()
 void CreatePdf::PrintLastApparatusStartOrder()
 {
     retriveGymnastList();
-    // 1st update the scores
-    //m_cRank.updateAllroundScores();
+    m_cRank.updateAllroundScores();
 
-    QString strFileName = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-
-    strFileName += "/MemorialGander2024.pdf";
+    const QString strFileName = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)
+                              + "/MemorialGander2026_FinalApparatusStartingOrder.pdf";
 
     m_printer.setOutputFormat(QPrinter::PdfFormat);
     m_printer.setPageSize(QPageSize::A4);
@@ -90,12 +90,67 @@ void CreatePdf::PrintLastApparatusStartOrder()
     }
 
     m_iPageNumber = 1;
-    //PrintMenAllround(true);
+    PrintLastApparatusOrder(true);
 
     m_painter.end();
 
     qDebug() << "File created in " << strFileName;
 }
+
+void CreatePdf::PrintLastApparatusOrder(bool p_bHFImages)
+{
+    QString html;
+    QTextStream out(&html);
+
+    PrintHeader(p_bHFImages, out);
+
+    QList<QStringList> subscriptions;
+    dbInterface::Instance()->retrieveGymnastSubscriptionList(subscriptions);
+    QHash<int, int> assignedApparatusByAthlete;
+    for (const QStringList &subscription : subscriptions) {
+        if (subscription.size() >= 7)
+            assignedApparatusByAthlete.insert(subscription.at(0).toInt(), subscription.at(6).toInt());
+    }
+
+    const auto printStartingOrder = [&](bool men, QList<AthleteData> *rankedGymnasts,
+                                        bool closeTable) {
+        QFile titleFile(men ? ":/pdf/IN_LastApparatusMenTitle.html"
+                            : ":/pdf/IN_LastApparatusWomenTitle.html");
+        if (!titleFile.open(QIODevice::ReadOnly)) {
+            qCritical() << "Unable to open final apparatus title template:" << titleFile.errorString();
+            return;
+        }
+        QTextStream titleStream(&titleFile);
+        out << titleStream.readAll();
+        titleFile.close();
+
+        const int gymnastCount = qMin(6, rankedGymnasts->size());
+        const QString gender = men ? QStringLiteral("M") : QStringLiteral("F");
+        for (int order = 0; order < gymnastCount; ++order) {
+            AthleteData gymnast = rankedGymnasts->at(gymnastCount - order - 1);
+            const int apparatusId = assignedApparatusByAthlete.value(gymnast.getAthleteId(), 0);
+            const QString apparatus = ApparatusList::Instance()->apparatusName(apparatusId);
+
+            out << "<tr><td align=\"center\">" << (order + 1) << "</td>"
+                << "<td>" << gymnast.getNameFull().trimmed().toHtmlEscaped() << "</td>"
+                << "<td>";
+            if (!apparatus.isEmpty()
+                && ApparatusList::Instance()->getApparatusId(apparatus, gender) == apparatusId)
+                out << apparatus.toHtmlEscaped();
+            out << "</td></tr>" << Qt::endl;
+        }
+        if (closeTable)
+            out << "</table><br/>" << Qt::endl;
+    };
+
+    printStartingOrder(true, m_cRank.getAllroundMenList(), true);
+    printStartingOrder(false, m_cRank.getAllroundWomenList(), false);
+    PrintFooter(p_bHFImages, out);
+
+    out.flush();
+    DrawHtml(html);
+}
+
 void CreatePdf::PrintMenAllround(bool p_bHFImages)
 {
     QString html;
@@ -500,7 +555,7 @@ void CreatePdf::AddFooter(bool p_bHFImages)
 {
     if (p_bHFImages)
     {
-        QRectF target(20.0, 750.0, 2480.0/5, 283.0/5);
+        QRectF target(20.0, 750.0, 2480.0/3, 283.0/3);
         QRectF source(0.0, 0.0, 2480.0, 283.0);
         QImage image(":/pdf/IN_Footer_Sponsors.png");
         m_painter.drawImage(target, image, source);  // Paint the mask onto the image
@@ -552,4 +607,3 @@ void CreatePdf::DrawHtml(const QString& html)
     doc.setHtml(resourceHtml);
     doc.drawContents(&m_painter);
 }
-

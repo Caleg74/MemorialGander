@@ -25,6 +25,7 @@ private:
      * @param p_bHFImages true=with Header/Footer sponsor images
      */
     void PrintMenAllround(bool p_bHFImages);
+    void PrintLastApparatusOrder(bool p_bHFImages);
 
     /** Creates a pdf for the Women's allround ranking.
      * @param p_bHFImages true=with Header/Footer sponsor images

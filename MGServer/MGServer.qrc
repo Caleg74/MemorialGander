@@ -36,6 +36,8 @@
         <file alias="IN_Men_Rings.html">pdf/IN_Men_Rings.html</file>
         <file alias="IN_Men_Vault.html">pdf/IN_Men_Vault.html</file>
         <file alias="IN_MenTableTitle.html">pdf/IN_MenTableTitle.html</file>
+        <file alias="IN_LastApparatusMenTitle.html">pdf/IN_LastApparatusMenTitle.html</file>
+        <file alias="IN_LastApparatusWomenTitle.html">pdf/IN_LastApparatusWomenTitle.html</file>
         <file alias="IN_NoFooter.html">pdf/IN_NoFooter.html</file>
         <file alias="IN_NoHeader.html">pdf/IN_NoHeader.html</file>
         <file alias="IN_Women_BalanceBeam.html">pdf/IN_Women_BalanceBeam.html</file>
