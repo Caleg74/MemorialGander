@@ -39,7 +39,9 @@
 ****************************************************************************/
 #include "athletedata.h"
 #include <QDebug>
-#include <math.h>
+#include <algorithm>
+#include <functional>
+#include "rankingrules.h"
 #include "arithmetictools.h"
 
 AthleteData::AthleteData(const Gender_t p_eGender,
@@ -195,20 +197,13 @@ QString AthleteData::getDifficultyScore(int p_iApparatus) const
         return QString::number(m_vecScore[p_iApparatus].DifficultyScore, 'f', 3);
 }
 
-void AthleteData::setExecutionScore(int p_iApparatus)
+void AthleteData::setExecutionScore(int p_iApparatus, float p_fScore)
 {
-    if (m_eGender == Male)
-    {
-        if (p_iApparatus >= (ApparatusList::AMApparatusMax))
-            qCritical() << "setFinalScore(): p_iApparatus(M) " << p_iApparatus << " is out-of-range";
+    if (p_iApparatus < 0 || p_iApparatus >= m_vecScore.size()) {
+        qCritical() << "setExecutionScore(): apparatus out of range" << p_iApparatus;
+        return;
     }
-    else
-    {
-        if (p_iApparatus >= (ApparatusList::AWApparatusMax))
-            qCritical() << "setFinalScore(): p_iApparatus(W) " << p_iApparatus << " is out-of-range";
-    }
-
-    m_vecScore[p_iApparatus].ExecutionScore = m_vecScore[p_iApparatus].FinalScore - m_vecScore[p_iApparatus].DifficultyScore;
+    m_vecScore[p_iApparatus].ExecutionScore = p_fScore;
 }
 
 QString AthleteData::getExecutionScore(int p_iApparatus) const
@@ -230,20 +225,13 @@ QString AthleteData::getExecutionScore(int p_iApparatus) const
         return QString::number(m_vecScore[p_iApparatus].ExecutionScore, 'f', 3);
 }
 
-void AthleteData::setPenaltyScore(int p_iApparatus)
+void AthleteData::setPenaltyScore(int p_iApparatus, float p_fScore)
 {
-    if (m_eGender == Male)
-    {
-        if (p_iApparatus >= (ApparatusList::AMApparatusMax))
-            qCritical() << "setFinalScore(): p_iApparatus(M) " << p_iApparatus << " is out-of-range";
+    if (p_iApparatus < 0 || p_iApparatus >= m_vecScore.size()) {
+        qCritical() << "setPenaltyScore(): apparatus out of range" << p_iApparatus;
+        return;
     }
-    else
-    {
-        if (p_iApparatus >= (ApparatusList::AWApparatusMax))
-            qCritical() << "setFinalScore(): p_iApparatus(W) " << p_iApparatus << " is out-of-range";
-    }
-
-    m_vecScore[p_iApparatus].PenaltyScore = m_vecScore[p_iApparatus].FinalScore - m_vecScore[p_iApparatus].DifficultyScore;
+    m_vecScore[p_iApparatus].PenaltyScore = p_fScore;
 }
 
 QString AthleteData::getPenaltyScore(int p_iApparatus) const
@@ -302,136 +290,64 @@ QString AthleteData::getFinalScore(int p_iApparatus) const
 
 void AthleteData::CalculateTotalScore()
 {
-    float fStartTot = 0;
-    float fTot = 0;
-    int iApparatusMax;
-    if (m_eGender == Male)
-        iApparatusMax   = ApparatusList::AMApparatusMax;
-    else
-        iApparatusMax   = ApparatusList::AWApparatusMax;
-
-    for (int i=ApparatusList::AGFirstApparatus; i<iApparatusMax; i++)
-    {
-        fStartTot += m_vecScore[i].DifficultyScore;
-        fTot += m_vecScore[i].FinalScore;
+    qint64 difficulty = 0;
+    qint64 execution = 0;
+    qint64 penalty = 0;
+    qint64 final = 0;
+    for (qsizetype i = ApparatusList::AGFirstApparatus; i < m_vecScore.size(); ++i) {
+        const auto &score = m_vecScore.at(i);
+        difficulty += RankingRules::milliPoints(score.DifficultyScore);
+        execution += RankingRules::milliPoints(score.ExecutionScore);
+        penalty += RankingRules::milliPoints(score.PenaltyScore);
+        final += RankingRules::milliPoints(score.FinalScore);
     }
-
-    m_vecScore[ApparatusList::AGTotalScore].DifficultyScore = fStartTot;
-    m_vecScore[ApparatusList::AGTotalScore].FinalScore = fTot;
+    auto &total = m_vecScore[ApparatusList::AGTotalScore];
+    total.DifficultyScore = static_cast<float>(difficulty / 1000.0);
+    total.ExecutionScore = static_cast<float>(execution / 1000.0);
+    total.PenaltyScore = static_cast<float>(penalty / 1000.0);
+    total.FinalScore = static_cast<float>(final / 1000.0);
 }
 
-bool AthleteData::operator<(const AthleteData other) const
+QList<qint64> AthleteData::rankingKey() const
 {
-    int iApparatusMax;
-    if (m_eGender == Male)
-        iApparatusMax   = ApparatusList::AMApparatusMax;
-    else
-        iApparatusMax   = ApparatusList::AWApparatusMax;
-
-    // the filter model sorts the list with respect to the ranking, prior to that
-    // the list must besorted out of the total score.
-    // For this reason the total score must be calculated prior to this point
-
-    // each return value is ! (inverted), since the sorting is not ascending but descending
-    if (fAreSame(m_vecScore[ApparatusList::AGTotalScore].FinalScore,
-                     other.m_vecScore[ApparatusList::AGTotalScore].FinalScore))
-    {
-        // 2nd criteria: remove the lowest score and check the total again
-        QList<float> scoresThis;
-        QList<float> scoresOther;
-
-        // Fill the list with all final scores
-        for (int i=ApparatusList::AGFirstApparatus; i<iApparatusMax; i++)
-        {
-            scoresThis << m_vecScore[i].FinalScore;
-            scoresOther << other.m_vecScore[i].FinalScore;
-        }
-        // sort the list in ascending order, then remove the lowest score
-        std::sort(scoresThis.begin(), scoresThis.end());
-        std::sort(scoresOther.begin(), scoresOther.end());
-
-        while (scoresThis.size() > 1)
-        {
-            scoresThis.removeFirst();
-            scoresOther.removeFirst();
-
-            float fSumThis = 0.0;
-            float fSumOther = 0.0;
-            // create the total with the remaining items
-            for (int j=0; j<scoresThis.size(); j++)
-            {
-                fSumThis += scoresThis.at(j);
-                fSumOther += scoresOther.at(j);
-            }
-
-            if (fALessThanB(fSumThis, fSumOther))
-            {
-                return !true;
-            }
-            else if (fAGreaterThanB(fSumThis, fSumOther))
-            {
-                return !false;
-            }
-            // if equal remove the next "lowest" score and try again
-        }
-
-        // 3rd criteria: the highest sum of all execution (E) scores
-        // Fill the list with all execution scores
-        float fSumExecThis = 0.0;
-        float fSumExecOther = 0.0;
-
-        for (int i=ApparatusList::AGFirstApparatus; i<iApparatusMax; i++)
-        {
-            fSumExecThis += m_vecScore[i].ExecutionScore;
-            fSumExecOther += other.m_vecScore[i].ExecutionScore;
-        }
-
-        if (fALessThanB(fSumExecThis, fSumExecOther))
-        {
-            return !true;
-        }
-        else if (fAGreaterThanB(fSumExecThis, fSumExecOther))
-        {
-            return !false;
-        }
-
-
-        // 4th criteria: the highest sum of all start (D) scores
-        // Fill the list with all execution scores
-        float fSumStartThis = 0.0;
-        float fSumStartOther = 0.0;
-
-        for (int i=ApparatusList::AGFirstApparatus; i<iApparatusMax; i++)
-        {
-            fSumStartThis += m_vecScore[i].DifficultyScore;
-            fSumStartOther += other.m_vecScore[i].DifficultyScore;
-        }
-
-        if (fALessThanB(fSumStartThis, fSumStartOther))
-        {
-            return !true;
-        }
-        else if (fAGreaterThanB(fSumStartOther, fSumStartOther))
-        {
-            return !false;
-        }
-
-        // at this pointit's probably everything = 0s...
-        // sort alphabetically
-        if (QString::compare(m_nameFull, other.m_nameFull) < 0)
-            return true;
-        else
-            return false;
+    QList<qint64> finals;
+    qint64 total = 0;
+    qint64 execution = 0;
+    qint64 difficulty = 0;
+    for (qsizetype i = ApparatusList::AGFirstApparatus; i < m_vecScore.size(); ++i) {
+        const auto &score = m_vecScore.at(i);
+        const qint64 final = RankingRules::milliPoints(score.FinalScore);
+        finals.append(final);
+        total += final;
+        execution += RankingRules::milliPoints(score.ExecutionScore);
+        difficulty += RankingRules::milliPoints(score.DifficultyScore);
     }
-    else if (fALessThanB(m_vecScore[ApparatusList::AGTotalScore].FinalScore,
-                         other.m_vecScore[ApparatusList::AGTotalScore].FinalScore))
-    {
-     return !true;
+    std::sort(finals.begin(), finals.end(), std::greater<qint64>());
+
+    // FIG overall: total, best N-1 scores, then N-2 ... 1, total E, total D.
+    // Missing apparatus retain zero scores, as in the existing Memorial format.
+    QList<qint64> key{total};
+    for (qsizetype remaining = finals.size(); remaining > 1; --remaining) {
+        total -= finals.at(remaining - 1);
+        key.append(total);
     }
-    else
-    {
-        return !false;
-    }
+    key.append(execution);
+    key.append(difficulty);
+    return key;
+}
+
+bool AthleteData::operator<(const AthleteData &other) const
+{
+    const auto key = rankingKey();
+    const auto otherKey = other.rankingKey();
+    return std::lexicographical_compare(key.cbegin(), key.cend(),
+                                        otherKey.cbegin(), otherKey.cend(),
+                                        std::greater<qint64>());
+}
+
+bool AthleteData::hasSameRankingAs(const AthleteData &other) const
+{
+    return rankingKey() == other.rankingKey();
 }
 
 bool operator== (const AthleteData& lhs, const AthleteData& rhs)

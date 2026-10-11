@@ -1,6 +1,7 @@
 #include "singlemwdatamodel.h"
 #include <QDebug>
 #include "dbinterface.h"
+#include "rankingrules.h"
 
 //**** STATIC MEMBER INITIALIZATION *********************
 
@@ -88,27 +89,15 @@ void SingleMWDataModel::updateScores()
     for (iter = m_rankingList.begin(); iter != m_rankingList.end(); ++iter)
     {
         int iAthleteId = iter->getAthleteId();
-        float fDifficultyScore = dbInterface::Instance()->getDifficultyScore(iAthleteId, iAppId);
-        float fFinalScore = dbInterface::Instance()->getFinalScore(iAthleteId, iAppId);
-        int iForceScore   = dbInterface::Instance()->getForceScore(iAthleteId, iAppId);
-        float fTotalAllroundScore = dbInterface::Instance()->getAllroundTotalScore(iAthleteId);
-
-        iter->setFinalScore(fFinalScore);
-        iter->setDifficultyScore(fDifficultyScore);
-        iter->setForceScore(iForceScore);
-        iter->setAllroundTotalScore(fTotalAllroundScore);
+        const AllScores scores = dbInterface::Instance()->getAllScores(iAthleteId, iAppId);
+        iter->setFinalScore(scores.FinalScore);
+        iter->setDifficultyScore(scores.DifficultyScore);
+        iter->setExecutionScore(scores.ExecutionScore);
+        iter->setPenaltyScore(scores.PenaltyScore);
+        iter->setForceScore(scores.ForceScore);
     }
 
-    // sort the list
-    std::sort(m_rankingList.begin(), m_rankingList.end());
-
-    // the order defines the ranking as well
-    int iRank = 1;
-    for (iter = m_rankingList.begin(); iter != m_rankingList.end(); ++iter)
-    {
-        iter->setRank(iRank);
-        iRank++;
-    }
+    RankingRules::sortAndAssignRanks(m_rankingList);
 
     // update all model
     emit dataChanged(index(0, 0), index(rowCount() - 1, 0));

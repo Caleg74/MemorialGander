@@ -1,7 +1,7 @@
 TEMPLATE = app
 
 QT += sql qml quick quickcontrols2 widgets printsupport
-CONFIG += c++11
+CONFIG += c++17
 
 RC_ICONS = ../MGCommon/image/ApplicationRed.ico
 
@@ -31,6 +31,7 @@ SOURCES += \
     src/gymnastranking.cpp
 
 HEADERS += \
+    ../MGCommon/src/gymnast/rankingrules.h \
     ../MGCommon/src/db/dbconnection.h \
     ../MGCommon/src/db/dbifacebase.cpp \
     ../MGCommon/src/cbbItems/comboboxmodel.h \

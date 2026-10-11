@@ -9,14 +9,14 @@ class SingleMWData
 public:
 
 
-    typedef struct
+    struct SScore
     {
         float DifficultyScore;
         float ExecutionScore;
         float PenaltyScore;
         float FinalScore;
-        int   ForceScore;   // to be used only in case of equal score
-    } SScore;
+        int   ForceScore;   // Legacy metadata; not used for sporting tiebreaks
+    };
 
     SingleMWData(const int p_iAthleteId,
                  const QString& fullName,
@@ -44,8 +44,7 @@ public:
 
     void setForceScore(int p_iForceScore);
 
-    /** Sets the allround total score.
-     *  It shall be used only in case of equal score */
+    // Legacy metadata; apparatus tiebreaks use only final, E and D.
     void setAllroundTotalScore(float p_fAllroundTotScore);
 
 //    QString getForceScore() const;
@@ -54,17 +53,18 @@ public:
 
     friend QDebug& operator<< (QDebug &stream, const SingleMWData &obj);
 
-    bool operator<(const SingleMWData other) const;
+    bool operator<(const SingleMWData &other) const;
+    bool hasSameRankingAs(const SingleMWData &other) const;
 
 
 private:
     int m_iAthleteId;
     int m_iRank;
-    float m_fAllroundScore;    // just in case of equalscore
+    float m_fAllroundScore;    // Legacy metadata, not a ranking criterion
     QString m_nameFull;
     QString m_nation;
     QString m_imagePath;
-    SScore m_sScore;
+    SScore m_sScore{};
 };
 
 

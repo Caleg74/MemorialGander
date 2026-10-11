@@ -1,5 +1,6 @@
 #include "gymnastranking.h"
 #include "dbinterface.h"
+#include "rankingrules.h"
 
 GymnastRanking::GymnastRanking()
 {
@@ -112,27 +113,15 @@ void GymnastRanking::updateSingleScores(int p_iApparatusId, QList<SingleMWData>*
     {
         int iAthleteId = iter->getAthleteId();
         AllScores sAllScores = dbInterface::Instance()->getAllScores(iAthleteId, p_iApparatusId);
-        float fTotalAllroundScore = dbInterface::Instance()->getAllroundTotalScore(iAthleteId);
 
         iter->setFinalScore(sAllScores.FinalScore);
         iter->setDifficultyScore(sAllScores.DifficultyScore);
         iter->setExecutionScore(sAllScores.ExecutionScore);
         iter->setPenaltyScore(sAllScores.PenaltyScore);
         iter->setForceScore(sAllScores.ForceScore);
-
-        iter->setAllroundTotalScore(fTotalAllroundScore);
     }
 
-    // sort the list
-    std::sort(p_pList->begin(), p_pList->end());
-
-    // the order defines the ranking as well
-    int iRank = 1;
-    for (iter = p_pList->begin(); iter != p_pList->end(); ++iter)
-    {
-        iter->setRank(iRank);
-        iRank++;
-    }
+    RankingRules::sortAndAssignRanks(*p_pList);
 }
 
 void GymnastRanking::updateAllroundMenScores()
@@ -145,26 +134,16 @@ void GymnastRanking::updateAllroundMenScores()
         {
             int iAthleteId = iter->getAthleteId();
             int iAppId = ApparatusList::Instance()->getApparatusId((ApparatusList::EApparatusMen)apparatus);
-            float fDifficultyScore = dbInterface::Instance()->getDifficultyScore(iAthleteId, iAppId);
-            float fFinalScore = dbInterface::Instance()->getFinalScore(iAthleteId, iAppId);
-
-            iter->setFinalScore((ApparatusList::EApparatusMen)apparatus, fFinalScore);
-            iter->setDifficultyScore((ApparatusList::EApparatusMen)apparatus, fDifficultyScore);
-            iter->setExecutionScore((ApparatusList::EApparatusMen)apparatus);
+            const AllScores scores = dbInterface::Instance()->getAllScores(iAthleteId, iAppId);
+            iter->setFinalScore(apparatus, scores.FinalScore);
+            iter->setDifficultyScore(apparatus, scores.DifficultyScore);
+            iter->setExecutionScore(apparatus, scores.ExecutionScore);
+            iter->setPenaltyScore(apparatus, scores.PenaltyScore);
         }
         iter->CalculateTotalScore();
     }
 
-    // sort the list
-    std::sort(m_MenList.begin(), m_MenList.end());
-
-    // the order defines the ranking as well
-    int iRank = 1;
-    for (iter = m_MenList.begin(); iter != m_MenList.end(); ++iter)
-    {
-        iter->setRank(iRank);
-        iRank++;
-    }
+    RankingRules::sortAndAssignRanks(m_MenList);
 }
 
 void GymnastRanking::updateAllroundWomenScores()
@@ -177,25 +156,14 @@ void GymnastRanking::updateAllroundWomenScores()
         {
             int iAthleteId = iter->getAthleteId();
             int iAppId = ApparatusList::Instance()->getApparatusId((ApparatusList::EApparatusWomen)apparatus);
-            float fDifficultyScore = dbInterface::Instance()->getDifficultyScore(iAthleteId, iAppId);
-            float fFinalScore = dbInterface::Instance()->getFinalScore(iAthleteId, iAppId);
-
-            iter->setFinalScore((ApparatusList::EApparatusWomen)apparatus, fFinalScore);
-            iter->setDifficultyScore((ApparatusList::EApparatusWomen)apparatus, fDifficultyScore);
-            iter->setExecutionScore((ApparatusList::EApparatusWomen)apparatus);
+            const AllScores scores = dbInterface::Instance()->getAllScores(iAthleteId, iAppId);
+            iter->setFinalScore(apparatus, scores.FinalScore);
+            iter->setDifficultyScore(apparatus, scores.DifficultyScore);
+            iter->setExecutionScore(apparatus, scores.ExecutionScore);
+            iter->setPenaltyScore(apparatus, scores.PenaltyScore);
         }
         iter->CalculateTotalScore();
     }
 
-    // sort the list
-    std::sort(m_WomenList.begin(), m_WomenList.end());
-
-    // the order defines the ranking as well
-    int iRank = 1;
-    for (iter = m_WomenList.begin(); iter != m_WomenList.end(); ++iter)
-    {
-        iter->setRank(iRank);
-
-        iRank++;
-    }
+    RankingRules::sortAndAssignRanks(m_WomenList);
 }

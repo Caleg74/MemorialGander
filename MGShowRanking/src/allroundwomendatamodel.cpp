@@ -1,5 +1,6 @@
 #include "allroundwomendatamodel.h"
 #include "dbinterface.h"
+#include "rankingrules.h"
 #include "sortfilterproxymodel.h"
 
 //**** STATIC MEMBER INITIALIZATION *********************
@@ -68,7 +69,8 @@ void AllroundWomenDataModel::updateScores()
 //            float fStartRandom = fFinalRandom - 10;
             iter->setFinalScore((ApparatusList::EApparatusWomen)apparatus, sAllScore.FinalScore);
             iter->setDifficultyScore((ApparatusList::EApparatusWomen)apparatus, sAllScore.DifficultyScore);
-            iter->setExecutionScore((ApparatusList::EApparatusWomen)apparatus);
+            iter->setExecutionScore(apparatus, sAllScore.ExecutionScore);
+            iter->setPenaltyScore(apparatus, sAllScore.PenaltyScore);
             iter->setIsFinalApparatusScore((ApparatusList::EApparatusWomen)apparatus, sAllScore.IsFinalApparatus);
 
             bool bLatestScore = (bLatestScoreIsValid && (iLatestScoreAthletedId == iAthleteId) && (iLatestScoreApparatusId == iAppId));
@@ -77,16 +79,7 @@ void AllroundWomenDataModel::updateScores()
         iter->CalculateTotalScore();
     }
 
-    // sort the list
-    std::sort(m_rankingList.begin(), m_rankingList.end());
-
-    // the order defines the ranking as well
-    int iRank = 1;
-    for (iter = m_rankingList.begin(); iter != m_rankingList.end(); ++iter)
-    {
-        iter->setRank(iRank);
-        iRank++;
-    }
+    RankingRules::sortAndAssignRanks(m_rankingList);
 
     // update all model
     emit dataChanged(index(0, 0), index(rowCount() - 1, 0));

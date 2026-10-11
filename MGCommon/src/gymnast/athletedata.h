@@ -2,7 +2,7 @@
 #define ATHLETEDATA_H
 
 #include <QString>
-#include <QVector>
+#include <QList>
 #include "apparatuslist.h"
 
 
@@ -16,7 +16,7 @@ public:
         Female
     };
 
-    typedef struct
+    struct SScore
     {
         float DifficultyScore;
         float ExecutionScore;
@@ -24,7 +24,7 @@ public:
         float FinalScore;
         bool  IsFinalApparatus; // mark if score id fromthe final apparatus
         bool  IsLatestScore;    // true if last-inserted score
-    } SScore;
+    };
 
     AthleteData(const Gender_t p_eGender,
                 const int p_iAthleteId,
@@ -48,10 +48,10 @@ public:
     void setDifficultyScore(int p_iApparatus, float p_fScore);
     QString getDifficultyScore(int p_iApparatus) const;
 
-    void setExecutionScore(int p_iApparatus);
+    void setExecutionScore(int p_iApparatus, float p_fScore);
     QString getExecutionScore(int p_iApparatus) const;
 
-    void setPenaltyScore(int p_iApparatus);
+    void setPenaltyScore(int p_iApparatus, float p_fScore);
     QString getPenaltyScore(int p_iApparatus) const;
 
     void setFinalScore(int p_iApparatus, float p_fScore);
@@ -63,18 +63,21 @@ public:
 
     friend QDebug& operator<< (QDebug &stream, const AthleteData &obj);
 
-    bool operator<(const AthleteData other) const;
+    bool operator<(const AthleteData &other) const;
+    bool hasSameRankingAs(const AthleteData &other) const;
 
 
 
 private:
+    QList<qint64> rankingKey() const;
+
     Gender_t m_eGender;
     int m_iAthleteId;
     int m_iRank;
     QString m_nameFull;
     QString m_nationShort;
     QString m_imagePath;
-    QVector<SScore> m_vecScore;
+    QList<SScore> m_vecScore;
 };
 
 

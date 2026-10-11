@@ -39,7 +39,9 @@
 ****************************************************************************/
 #include "singlemwdata.h"
 #include <QDebug>
-#include "arithmetictools.h"
+#include "rankingrules.h"
+#include <array>
+#include <cmath>
 
 SingleMWData::SingleMWData(const int p_iAthleteId,
                            const QString& fullName,
@@ -113,7 +115,7 @@ void SingleMWData::setPenaltyScore(float p_fScore)
 
 QString SingleMWData::getPenaltyScore() const
 {
-    return QString::number(abs(m_sScore.PenaltyScore), 'f', 3);
+    return QString::number(std::abs(m_sScore.PenaltyScore), 'f', 3);
 }
 
 void SingleMWData::setFinalScore(float p_fScore)
@@ -136,60 +138,23 @@ void SingleMWData::setAllroundTotalScore(float p_fAllroundTotScore)
     m_fAllroundScore = p_fAllroundTotScore;
 }
 
-bool SingleMWData::operator<(const SingleMWData other) const
+bool SingleMWData::operator<(const SingleMWData &other) const
 {
-    // each return value is ! (inverted), since the sorting is not ascending but descending
-    if (fALessThanB(m_sScore.FinalScore, other.m_sScore.FinalScore))
-    {
-        return !true;
-    }
-    else if (fAGreaterThanB(m_sScore.FinalScore, other.m_sScore.FinalScore))
-    {
-        return !false;
-    }
+    // Memorial Gander uses one vault: the same final/E/D rule on every apparatus.
+    const std::array<qint64, 3> key{
+        RankingRules::milliPoints(m_sScore.FinalScore),
+        RankingRules::milliPoints(m_sScore.ExecutionScore),
+        RankingRules::milliPoints(m_sScore.DifficultyScore)};
+    const std::array<qint64, 3> otherKey{
+        RankingRules::milliPoints(other.m_sScore.FinalScore),
+        RankingRules::milliPoints(other.m_sScore.ExecutionScore),
+        RankingRules::milliPoints(other.m_sScore.DifficultyScore)};
+    return key > otherKey;
+}
 
-    // 2nd criteria is execution score
-    float fExecScoreThis = m_sScore.FinalScore - m_sScore.DifficultyScore;
-    float fExecScoreOther = other.m_sScore.FinalScore - other.m_sScore.DifficultyScore;
-
-    if (fALessThanB(fExecScoreThis, fExecScoreOther))
-    {
-        return !true;
-    }
-    else if (fAGreaterThanB(fExecScoreThis, fExecScoreOther))
-    {
-        return !false;
-    }
-
-    // 3rd criteria is the final Allround ranking
-    if (fALessThanB(m_fAllroundScore, other.m_fAllroundScore))
-    {
-        return !true;
-    }
-    else if (fAGreaterThanB(m_fAllroundScore, other.m_fAllroundScore))
-    {
-        return !false;
-    }
-
-
-    // 4th criteria is  "manual flag" a force_score that makes the difference
-    if (fALessThanB(m_sScore.ForceScore, other.m_sScore.ForceScore))
-    {
-        return !true;
-    }
-    else if (fAGreaterThanB(m_sScore.ForceScore, other.m_sScore.ForceScore))
-    {
-        return !false;
-    }
-
-    // at this pointit's probably everything = 0s...
-    // sort alphabetically
-    if (QString::compare(m_nameFull, other.m_nameFull) < 0)
-        return true;
-    else
-        return false;
-
-    return !false;
+bool SingleMWData::hasSameRankingAs(const SingleMWData &other) const
+{
+    return !(*this < other) && !(other < *this);
 }
 
 bool operator== (const SingleMWData& lhs, const SingleMWData& rhs)
