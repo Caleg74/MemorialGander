@@ -162,7 +162,7 @@ void CreatePdf::PrintMenAllround(bool p_bHFImages)
     PrintFooter(p_bHFImages, out);
 
     out.flush();
-    DrawHtml(html);
+    DrawAllroundHtml(html);
 }
 
 void CreatePdf::PrintWomenAllround(bool p_bHFImages)
@@ -176,7 +176,7 @@ void CreatePdf::PrintWomenAllround(bool p_bHFImages)
     PrintFooter(p_bHFImages, out);
 
     out.flush();
-    DrawHtml(html);
+    DrawAllroundHtml(html);
 }
 
 void CreatePdf::PrintAllSingleApparatusMen(bool p_bHFImages)
@@ -267,65 +267,7 @@ void CreatePdf::PrintMenTableTitle(QTextStream& out)
 
 void CreatePdf::PrintMenTableBody(QTextStream& out)
 {
-    QList<AthleteData>* pMenList = m_cRank.getAllroundMenList();
-
-    for (int i=0; i<pMenList->size(); i++)
-    {
-        out << "\t<tr>" << Qt::endl;
-        out << "\t  <th rowspan=\"2\" valign=\"middle\">"
-            << pMenList->at(i).getRank()
-            <<"</th> <!-- Rank -->" << Qt::endl;
-        out << "\t  <th rowspan=\"2\" valign=\"middle\" align=\"left\" width=\"150\">"
-            << pMenList->at(i).getNameFull()
-            << "(" << pMenList->at(i).getNationShort() << ")"
-            << "</th>" << Qt::endl;
-        out << "\t  <th align=\"center\">"
-            << pMenList->at(i).getFinalScore(ApparatusList::AGTotalScore)
-            <<"</th> <!-- Total -->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pMenList->at(i).getFinalScore(ApparatusList::AMFloor)
-            <<"</td> <!-- Floor -->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pMenList->at(i).getFinalScore(ApparatusList::AMPommelHorse)
-            <<"</td> <!-- Pommel Horse-->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pMenList->at(i).getFinalScore(ApparatusList::AMRings)
-            <<"</td> <!-- Rings-->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pMenList->at(i).getFinalScore(ApparatusList::AMVault)
-            <<"</td> <!-- Vault-->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pMenList->at(i).getFinalScore(ApparatusList::AMParallelBars)
-            <<"</td> <!-- Parallel Bars-->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pMenList->at(i).getFinalScore(ApparatusList::AMHorizontalBar)
-            <<"</td> <!-- Horizonatl Bar-->" << Qt::endl;
-        out << "\t</tr>" << Qt::endl;
-
-        out << "\t<tr>" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pMenList->at(i).getDifficultyScore(ApparatusList::AGTotalScore)
-            <<")</small></td> <!-- Total -->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pMenList->at(i).getDifficultyScore(ApparatusList::AMFloor)
-            <<")</small></td>  <!-- Floor -->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pMenList->at(i).getDifficultyScore(ApparatusList::AMPommelHorse)
-            <<")</small></td>  <!-- Pommel Horse-->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pMenList->at(i).getDifficultyScore(ApparatusList::AMRings)
-            <<")</small></td>  <!-- Rings-->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pMenList->at(i).getDifficultyScore(ApparatusList::AMVault)
-            <<")</small></td>  <!-- Vault-->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pMenList->at(i).getDifficultyScore(ApparatusList::AMParallelBars)
-            <<")</small></td>  <!-- Parallel Bars-->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pMenList->at(i).getDifficultyScore(ApparatusList::AMHorizontalBar)
-            <<")</small></td>  <!-- Horizonatl Bar-->" << Qt::endl;
-        out << "\t</tr>" << Qt::endl;
-    }
+    PrintAllroundTableBody(out, *m_cRank.getAllroundMenList(), ApparatusList::AMApparatusMax);
 }
 
 void CreatePdf::PrintWomenTableTitle(QTextStream& out)
@@ -341,53 +283,37 @@ void CreatePdf::PrintWomenTableTitle(QTextStream& out)
 
 void CreatePdf::PrintWomenTableBody(QTextStream& out)
 {
-    QList<AthleteData>* pWomenList = m_cRank.getAllroundWomenList();
+    PrintAllroundTableBody(out, *m_cRank.getAllroundWomenList(), ApparatusList::AWApparatusMax);
+}
 
-    for (int i=0; i<pWomenList->size(); i++)
-    {
-        out << "\t<tr>" << Qt::endl;
-        out << "\t  <th rowspan=\"2\" valign=\"middle\">"
-            << pWomenList->at(i).getRank()
-            <<"</th> <!-- Rank -->" << Qt::endl;
-        out << "\t  <th rowspan=\"2\" valign=\"middle\" align=\"left\" width=\"150\">"
-            << pWomenList->at(i).getNameFull()
-            << "(" << pWomenList->at(i).getNationShort() << ")"
-            << "</th>" << Qt::endl;
-        out << "\t  <th align=\"center\">"
-            << pWomenList->at(i).getFinalScore(ApparatusList::AGTotalScore)
-            <<"</th> <!-- Total -->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pWomenList->at(i).getFinalScore(ApparatusList::AWVault)
-            <<"</td> <!-- Vault -->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pWomenList->at(i).getFinalScore(ApparatusList::AWUnevenBars)
-            <<"</td> <!-- Uneven Bars-->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pWomenList->at(i).getFinalScore(ApparatusList::AWBalanceBeam)
-            <<"</td> <!-- Balance Beam-->" << Qt::endl;
-        out << "\t  <td align=\"center\">"
-            << pWomenList->at(i).getFinalScore(ApparatusList::AWFloor)
-            <<"</td> <!-- Floor-->" << Qt::endl;
-        out << "\t</tr>" << Qt::endl;
+void CreatePdf::PrintAllroundTableBody(QTextStream& out, const QList<AthleteData>& gymnasts,
+                                     int apparatusEnd)
+{
+    const auto numericScore = [](const QString &score) {
+        const QString value = score.trimmed();
+        return value == QStringLiteral("-") ? QStringLiteral("0.000") : value;
+    };
+    for (const auto &gymnast : gymnasts) {
+        out << "<tr><td align=\"center\" style=\"font-size:10px;font-weight:bold;\">"
+            << gymnast.getRank() << "</td>"
+            << "<td style=\"font-size:10px;font-weight:bold;\">"
+            << gymnast.getNameFull().trimmed().toHtmlEscaped()
+            << " (" << gymnast.getNationShort().toHtmlEscaped() << ")</td>";
 
-        out << "\t<tr>" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pWomenList->at(i).getDifficultyScore(ApparatusList::AGTotalScore)
-            <<")</small></td> <!-- Total -->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pWomenList->at(i).getDifficultyScore(ApparatusList::AWVault)
-            <<")</small></td>  <!-- Vault -->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pWomenList->at(i).getDifficultyScore(ApparatusList::AWUnevenBars)
-            <<")</small></td>  <!-- Uneven Bars-->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pWomenList->at(i).getDifficultyScore(ApparatusList::AWBalanceBeam)
-            <<")</small></td>  <!-- Balance Beam-->" << Qt::endl;
-        out << "\t  <td align=\"center\"><small>("
-            << pWomenList->at(i).getDifficultyScore(ApparatusList::AWFloor)
-            <<")</small></td>  <!-- Floor-->" << Qt::endl;
-
-        out << "\t</tr>" << Qt::endl;
+        // Total first, followed by each apparatus in the existing column order.
+        for (int apparatus = ApparatusList::AGTotalScore; apparatus < apparatusEnd; ++apparatus) {
+            const QString final = gymnast.getFinalScore(apparatus).trimmed();
+            out << "<td align=\"center\"><span style=\"font-size:11px;font-weight:bold;\">"
+                << final << "</span>";
+            if (final != QStringLiteral("-")) {
+                out << "<br/><span style=\"font-size:8px;font-weight:normal;\">"
+                    << "D " << numericScore(gymnast.getDifficultyScore(apparatus))
+                    << "<br/>E " << numericScore(gymnast.getExecutionScore(apparatus))
+                    << "</span>";
+            }
+            out << "</td>";
+        }
+        out << "</tr>" << Qt::endl;
     }
 }
 
@@ -457,11 +383,11 @@ void CreatePdf::PrintSingleMApparatusTableBody(QTextStream& out)
             out << "\t</tr>" << Qt::endl;
 
             out << "\t<tr>" << Qt::endl;
-            out << "\t  <td align=\"center\"><small>(Difficulty="
+            out << "\t  <td align=\"center\"><small>(D="
                 << pMenList->at(i).getDifficultyScore()
-                <<", Execution="
+                <<", E="
                 << pMenList->at(i).getExecutionScore()
-                <<", Penalty="
+                <<", P="
                 << pMenList->at(i).getPenaltyScore()
                 << ")</small></td> <!-- Single appparatus -->" << Qt::endl;
             out << "\t</tr>" << Qt::endl;
@@ -528,11 +454,11 @@ void CreatePdf::PrintSingleWApparatusTableBody(QTextStream& out)
             out << "\t</tr>" << Qt::endl;
 
             out << "\t<tr>" << Qt::endl;
-            out << "\t  <td align=\"center\"><small>(Difficulty="
+            out << "\t  <td align=\"center\"><small>(D="
                 << pWomenList->at(i).getDifficultyScore()
-                <<", Execution="
+                <<", E="
                 << pWomenList->at(i).getExecutionScore()
-                <<", Penalty="
+                <<", P="
                 << pWomenList->at(i).getPenaltyScore()
                 << ")</small></td> <!-- Single appparatus -->" << Qt::endl;
             out << "\t</tr>" << Qt::endl;
@@ -573,6 +499,15 @@ void CreatePdf::AddPageNumber()
 
     // inc for next page
     m_iPageNumber++;
+}
+
+void CreatePdf::DrawAllroundHtml(QString html)
+{
+    // The legacy <font size> wrapper overrides nested CSS font sizes in Qt.
+    // Remove it only on the two overall pages, which define their own typography.
+    html.remove(QStringLiteral("<font face=\"arial\" size=\"2\">"));
+    html.remove(QStringLiteral("</font>"));
+    DrawHtml(html);
 }
 
 void CreatePdf::DrawHtml(const QString& html)
