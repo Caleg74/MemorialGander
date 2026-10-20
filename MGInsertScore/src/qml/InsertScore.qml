@@ -184,6 +184,7 @@ Item {
                     id: cbbAppartus
                     objectName: "apparatusSelection"
                     model: scoreForm.controller.apparatus.comboList
+                    emphasizedIndex: scoreForm.controller.finalApparatusIndex
                     width: parent.parent.width/10*4
 //                    activeFocusOnPress: true
 //                    visible: cbbGymnastSelection.currentIndex > 0

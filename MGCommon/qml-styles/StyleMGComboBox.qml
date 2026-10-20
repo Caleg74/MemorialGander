@@ -7,6 +7,8 @@ ComboBox {
     id: control
     font.pointSize: 15
     property int maximumVisibleItems: 7
+    property int emphasizedIndex: -1
+    property color emphasizedTextColor: "#0000ff"
 
     delegate: ItemDelegate {
         id: delegateItem
@@ -15,7 +17,8 @@ ComboBox {
         width: control.width
         contentItem: Text {
             text: delegateItem.modelData
-            color: "#0a3f60"
+            color: delegateItem.index === control.emphasizedIndex
+                   ? control.emphasizedTextColor : "#0a3f60"
             font: control.font
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
@@ -56,7 +59,8 @@ ComboBox {
 
         text: control.displayText
         font: control.font
-        color: control.pressed ? "white" : "#0a3f60"
+        color: control.currentIndex === control.emphasizedIndex && control.currentIndex >= 0
+               ? control.emphasizedTextColor : (control.pressed ? "white" : "#0a3f60")
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
     }

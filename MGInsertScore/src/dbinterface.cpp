@@ -23,6 +23,24 @@ dbInterface* dbInterface::Instance()
     return sm_pInstance;
 }
 
+int dbInterface::getFinalApparatusId(int athleteId, int eventId)
+{
+    if (!m_bInitialized || athleteId <= 0 || eventId <= 0)
+        return 0;
+
+    QSqlQuery query(QSqlDatabase::database(QStringLiteral("ConnMG")));
+    query.prepare(QStringLiteral(
+        "SELECT final_apparatus_id FROM sport_event_subscriptions "
+        "WHERE athlete_id = ? AND sport_event_id = ?"));
+    query.addBindValue(athleteId);
+    query.addBindValue(eventId);
+    if (!query.exec()) {
+        qCritical() << "Cannot load final apparatus:" << query.lastError();
+        return 0;
+    }
+    return query.next() ? query.value(0).toInt() : 0;
+}
+
 int dbInterface::getNationId(QString& p_strNiceName)
 {
     int iId = 0;

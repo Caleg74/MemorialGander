@@ -11,6 +11,8 @@ public:
 
     int getNationId(QString& p_strNiceName);
 
+    int getFinalApparatusId(int athleteId, int eventId);
+
     bool setNewScore(const int p_iEventId,
                      const int p_iAthleteId,
                      const int p_iApparatusId,

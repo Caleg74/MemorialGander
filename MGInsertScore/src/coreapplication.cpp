@@ -26,15 +26,27 @@ bool CoreApplication::initialize()
 void CoreApplication::selectGymnast(const QString &name)
 {
     const auto parts = name.split(',');
+    int finalIndex = -1;
     if (parts.size() < 2 || parts[0].trimmed().isEmpty() || parts[1].trimmed().isEmpty()) {
         m_apparatus.setComboList({QStringLiteral("Attrezzo..")});
-        return;
+    } else {
+        QString firstName = parts[0].trimmed();
+        QString lastName = parts[1].trimmed();
+        auto *database = dbInterface::Instance();
+        const int athleteId = database->getGymnastId(firstName, lastName);
+        auto *apparatusList = ApparatusList::Instance();
+        apparatusList->FillComboList(&m_apparatus, database->getGender(athleteId));
+        const int finalId = database->getFinalApparatusId(athleteId, database->getCurrentEventId());
+        if (finalId > 0) {
+            const int index = m_apparatus.comboList().indexOf(apparatusList->apparatusName(finalId));
+            if (index > 0)
+                finalIndex = index;
+        }
     }
-    QString firstName = parts[0].trimmed();
-    QString lastName = parts[1].trimmed();
-    auto *database = dbInterface::Instance();
-    const int athleteId = database->getGymnastId(firstName, lastName);
-    ApparatusList::Instance()->FillComboList(&m_apparatus, database->getGender(athleteId));
+    if (m_finalApparatusIndex != finalIndex) {
+        m_finalApparatusIndex = finalIndex;
+        emit finalApparatusIndexChanged();
+    }
 }
 
 void CoreApplication::setCategories(bool men, bool women)
