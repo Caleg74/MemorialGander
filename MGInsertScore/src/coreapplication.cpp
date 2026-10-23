@@ -2,6 +2,7 @@
 #include "apparatuslist.h"
 #include "dbinterface.h"
 #include <QDebug>
+#include <cmath>
 
 CoreApplication::CoreApplication(QObject *parent) : QObject(parent)
 {
@@ -47,6 +48,34 @@ void CoreApplication::selectGymnast(const QString &name)
         m_finalApparatusIndex = finalIndex;
         emit finalApparatusIndexChanged();
     }
+}
+
+QVariantMap CoreApplication::existingScore(const QString &gymnast, const QString &apparatus)
+{
+    const QStringList parts = gymnast.split(',');
+    if (parts.size() < 2 || parts.at(0).trimmed().isEmpty() || parts.at(1).trimmed().isEmpty())
+        return {{QStringLiteral("found"), false}};
+
+    QString firstName = parts.at(0).trimmed();
+    QString lastName = parts.at(1).trimmed();
+    QString apparatusName = apparatus;
+    auto *database = dbInterface::Instance();
+    const int athleteId = database->getGymnastId(firstName, lastName);
+    if (athleteId <= 0)
+        return {{QStringLiteral("found"), false}};
+
+    QString gender = database->getGender(athleteId);
+    const int apparatusId = database->getApparatusId(apparatusName, gender);
+    const int eventId = database->getCurrentEventId();
+    if (apparatusId <= 0 || eventId <= 0 || !database->isScorePresent(eventId, athleteId, apparatusId))
+        return {{QStringLiteral("found"), false}};
+
+    const AllScores scores = database->getAllScores(athleteId, apparatusId);
+    return {
+        {QStringLiteral("found"), true},
+        {QStringLiteral("difficulty"), QString::number(scores.DifficultyScore, 'f', 3)},
+        {QStringLiteral("penalty"), QString::number(std::abs(scores.PenaltyScore), 'f', 3)}
+    };
 }
 
 void CoreApplication::setCategories(bool men, bool women)

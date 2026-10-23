@@ -1,6 +1,7 @@
 #ifndef COREAPPLICATION_H
 #define COREAPPLICATION_H
 #include <QObject>
+#include <QVariantMap>
 #include <QtQml/qqmlregistration.h>
 #include "comboboxmodel.h"
 #include "savescore.h"
@@ -21,6 +22,7 @@ public:
     int finalApparatusIndex() const { return m_finalApparatusIndex; }
 public slots:
     void selectGymnast(const QString &name);
+    Q_INVOKABLE QVariantMap existingScore(const QString &gymnast, const QString &apparatus);
     void setCategories(bool men, bool women);
     bool saveScore(const QString &gymnast, const QString &apparatus,
                    const QString &difficulty, const QString &execution,

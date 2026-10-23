@@ -39,6 +39,19 @@ Item {
         txtPenalty4.backColor = "white"
     }
 
+    function loadExistingScore() {
+        resetValues()
+        if (!gymnastDefined)
+            return
+
+        const score = controller.existingScore(cbbGymnastSelection.currentText,
+                                               cbbAppartus.currentText)
+        if (score.found) {
+            txtDifficultyScore.text = score.difficulty
+            txtPenaltyScore.text = score.penalty
+        }
+    }
+
     function setExclBackground(score)
     {
         let penaltylist2 = [txtPenalty1, txtPenalty2, txtPenalty3, txtPenalty4]
@@ -173,7 +186,11 @@ Item {
 //                    activeFocusOnPress: true
                     KeyNavigation.tab: cbbAppartus
                     currentIndex: 0
-                    onCurrentTextChanged: scoreForm.controller.selectGymnast(currentText)
+                    onCurrentTextChanged: {
+                        scoreForm.controller.selectGymnast(currentText)
+                        cbbAppartus.currentIndex = 0
+                        scoreForm.resetValues()
+                    }
                 }
             }
 
@@ -195,6 +212,7 @@ Item {
                         if (currentIndex <= 0)
                             scoreForm.resetValues()
                     }
+                    onActivated: scoreForm.loadExistingScore()
                 }
 
 
