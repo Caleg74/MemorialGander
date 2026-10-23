@@ -50,7 +50,7 @@ public:
 
     QStringList comboListForGender(const QString &gender, bool includePlaceholder = true) const;
 
-    QString apparatusName(int apparatusId) const;
+    QString apparatusName(int apparatusId, ApparatusData::ApparatusLanguage_t p_eLang = ApparatusData::ALangIt) const;
 
     int getApparatusId(EApparatusMen p_eApparatusMen);
     int getApparatusId(EApparatusWomen p_eApparatusWomen);

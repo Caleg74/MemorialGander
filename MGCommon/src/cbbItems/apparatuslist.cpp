@@ -100,11 +100,11 @@ QStringList ApparatusList::comboListForGender(const QString &gender, bool includ
     return apparatusNames;
 }
 
-QString ApparatusList::apparatusName(int apparatusId) const
+QString ApparatusList::apparatusName(int apparatusId, ApparatusData::ApparatusLanguage_t p_eLang) const
 {
     for (const auto *apparatus : m_ApparatusList) {
         if (apparatus->getId() == apparatusId)
-            return apparatus->getName(ApparatusData::ALangIt);
+            return apparatus->getName(p_eLang);
     }
 
     return {};

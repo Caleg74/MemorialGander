@@ -129,7 +129,7 @@ void CreatePdf::PrintLastApparatusOrder(bool p_bHFImages)
         for (int order = 0; order < gymnastCount; ++order) {
             AthleteData gymnast = rankedGymnasts->at(gymnastCount - order - 1);
             const int apparatusId = assignedApparatusByAthlete.value(gymnast.getAthleteId(), 0);
-            const QString apparatus = ApparatusList::Instance()->apparatusName(apparatusId);
+            const QString apparatus = ApparatusList::Instance()->apparatusName(apparatusId, ApparatusData::ALangEn);
 
             out << "<tr><td align=\"center\">" << (order + 1) << "</td>"
                 << "<td>" << gymnast.getNameFull().trimmed().toHtmlEscaped() << "</td>"
