@@ -28,48 +28,41 @@ void CreatePdf::PrintRanking()
     // 1st update the scores
     m_cRank.updateAllroundScores();
 
-    // print 2 files,with and without header/footer
-    for (int i=0; i<2; i++)
-    {
-        bool bWithLogo = (i==0); // 1st time with logo
+    bool bWithLogo = true;
 
-        QString strFileName = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QString strFileName = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
 
-        if (bWithLogo)
-            strFileName += "/MemorialGander2026.pdf";
-        else
-            strFileName += "/MemorialGander2026_NoImage.pdf";
+    strFileName += "/MemorialGander2026.pdf";
 
-        m_printer.setOutputFormat(QPrinter::PdfFormat);
-        m_printer.setPageSize(QPageSize::A4);
-        m_printer.setOutputFileName(strFileName);
+    m_printer.setOutputFormat(QPrinter::PdfFormat);
+    m_printer.setPageSize(QPageSize::A4);
+    m_printer.setOutputFileName(strFileName);
 
-        if (! m_painter.begin(&m_printer)) { // failed to open file
-            qWarning("failed to open file, is it writable?");
-            return;
-        }
-
-       m_iPageNumber = 1;
-       PrintMenAllround(bWithLogo);
-
-        if (! m_printer.newPage()) {
-            qWarning("failed in flushing page to disk, disk full?");
-        }
-
-        PrintWomenAllround(bWithLogo);
-
-        if (! m_printer.newPage()) {
-            qWarning("failed in flushing page to disk, disk full?");
-        }
-
-        PrintAllSingleApparatusMen(bWithLogo);
-
-        PrintAllSingleApparatusWomen(bWithLogo);
-
-        m_painter.end();
-
-        qDebug() << "File created in " << strFileName;
+    if (! m_painter.begin(&m_printer)) { // failed to open file
+        qWarning("failed to open file, is it writable?");
+        return;
     }
+
+   m_iPageNumber = 1;
+   PrintMenAllround(bWithLogo);
+
+    if (! m_printer.newPage()) {
+        qWarning("failed in flushing page to disk, disk full?");
+    }
+
+    PrintWomenAllround(bWithLogo);
+
+    if (! m_printer.newPage()) {
+        qWarning("failed in flushing page to disk, disk full?");
+    }
+
+    PrintAllSingleApparatusMen(bWithLogo);
+
+    PrintAllSingleApparatusWomen(bWithLogo);
+
+    m_painter.end();
+
+    qDebug() << "File created in " << strFileName;
 }
 
 void CreatePdf::PrintLastApparatusStartOrder()
