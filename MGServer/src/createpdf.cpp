@@ -143,8 +143,9 @@ void CreatePdf::PrintLastApparatusOrder(bool p_bHFImages)
             out << "</table><br/>" << Qt::endl;
     };
 
-    printStartingOrder(true, m_cRank.getAllroundMenList(), true);
-    printStartingOrder(false, m_cRank.getAllroundWomenList(), false);
+    printStartingOrder(false, m_cRank.getAllroundWomenList(), true);
+    printStartingOrder(true, m_cRank.getAllroundMenList(), false);
+
     PrintFooter(p_bHFImages, out);
 
     out.flush();
