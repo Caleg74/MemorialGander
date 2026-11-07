@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QUrl>
 #include <QHash>
+#include <utility>
 #include "dbinterface.h"
 
 
@@ -92,57 +93,102 @@ void CreatePdf::PrintLastApparatusStartOrder()
 
 void CreatePdf::PrintLastApparatusOrder(bool p_bHFImages)
 {
-    QString html;
-    QTextStream out(&html);
-
-    PrintHeader(p_bHFImages, out);
+    struct Finalist {
+        QString name;
+        QString gender;
+        QString apparatus;
+    };
 
     QList<QStringList> subscriptions;
     dbInterface::Instance()->retrieveGymnastSubscriptionList(subscriptions);
     QHash<int, int> assignedApparatusByAthlete;
-    for (const QStringList &subscription : subscriptions) {
+    for (const QStringList &subscription : std::as_const(subscriptions)) {
         if (subscription.size() >= 7)
             assignedApparatusByAthlete.insert(subscription.at(0).toInt(), subscription.at(6).toInt());
     }
 
-    const auto printStartingOrder = [&](bool men, QList<AthleteData> *rankedGymnasts,
-                                        bool closeTable) {
-        QFile titleFile(men ? ":/pdf/IN_LastApparatusMenTitle.html"
-                            : ":/pdf/IN_LastApparatusWomenTitle.html");
-        if (!titleFile.open(QIODevice::ReadOnly)) {
-            qCritical() << "Unable to open final apparatus title template:" << titleFile.errorString();
-            return;
-        }
-        QTextStream titleStream(&titleFile);
-        out << titleStream.readAll();
-        titleFile.close();
+    const auto finalistsInStartingOrder = [&](const QList<AthleteData> &ranking, const QString &gender) {
+        constexpr qsizetype finalistsPerCategory = 6;
+        const qsizetype count = qMin(finalistsPerCategory, ranking.size());
+        auto *apparatusList = ApparatusList::Instance();
 
-        const int gymnastCount = qMin(6, rankedGymnasts->size());
-        const QString gender = men ? QStringLiteral("M") : QStringLiteral("F");
-        for (int order = 0; order < gymnastCount; ++order) {
-            AthleteData gymnast = rankedGymnasts->at(gymnastCount - order - 1);
-            const int apparatusId = assignedApparatusByAthlete.value(gymnast.getAthleteId(), 0);
-            const QString apparatus = ApparatusList::Instance()->apparatusName(apparatusId, ApparatusData::ALangEn);
+        QList<Finalist> finalists;
+        finalists.reserve(count);
+        for (qsizetype position = count; position > 0; --position) {
+            AthleteData gymnast = ranking.at(position - 1);
+            const int apparatusId = assignedApparatusByAthlete.value(gymnast.getAthleteId());
+            QString apparatus = apparatusList->apparatusName(apparatusId, ApparatusData::ALangEn);
+            if (!apparatus.isEmpty() && apparatusList->getApparatusId(apparatus, gender) != apparatusId)
+                apparatus.clear();
 
-            out << "<tr><td align=\"center\">" << (order + 1) << "</td>"
-                << "<td>" << gymnast.getNameFull().trimmed().toHtmlEscaped() << "</td>"
-                << "<td>";
-            if (!apparatus.isEmpty()
-                && ApparatusList::Instance()->getApparatusId(apparatus, gender) == apparatusId)
-                out << apparatus.toHtmlEscaped();
-            out << "</td></tr>" << Qt::endl;
+            finalists.append({gymnast.getNameFull().trimmed(), gender, apparatus});
         }
-        if (closeTable)
-            out << "</table><br/>" << Qt::endl;
+        return finalists;
     };
 
-    printStartingOrder(false, m_cRank.getAllroundWomenList(), true);
-    printStartingOrder(true, m_cRank.getAllroundMenList(), false);
+    const auto women = finalistsInStartingOrder(*m_cRank.getAllroundWomenList(), QStringLiteral("F"));
+    const auto men = finalistsInStartingOrder(*m_cRank.getAllroundMenList(), QStringLiteral("M"));
+    QList<Finalist> combined;
+    combined.reserve(women.size() + men.size());
+    for (qsizetype position = 0; position < qMax(women.size(), men.size()); ++position) {
+        if (position < women.size())
+            combined.append(women.at(position));
+        if (position < men.size())
+            combined.append(men.at(position));
+    }
 
-    PrintFooter(p_bHFImages, out);
+    QString html;
+    QTextStream out(&html);
+    const auto printTable = [&](const char *title, const QList<Finalist> &finalists, bool showGender) {
+        out << "<h2 style=\"font-size:10pt; margin-top:0px; margin-bottom:6px;\">"
+            << title << "</h2>"
+            << "<table border=\"1\" cellpadding=\"3\" width=\"100%\" "
+               "style=\"border-collapse:collapse; border-color:black;"
+            << (showGender ? " margin-bottom:16px;" : " font-size:8pt;") << "\">"
+            << "<tr><th width=\"" << (showGender ? 9 : 7) << "%\">#</th>";
+        if (showGender)
+            out << "<th width=\"10%\">M/F</th>";
+        out << "<th align=\"left\">Name</th>"
+            << "<th align=\"left\" width=\"" << (showGender ? 36 : 41) << "%\">Apparatus</th></tr>";
 
+        qsizetype order = 1;
+        for (const Finalist &finalist : finalists) {
+            out << "<tr><td align=\"center\">" << order++ << "</td>";
+            if (showGender)
+                out << "<td align=\"center\">" << finalist.gender << "</td>";
+            out << "<td>" << finalist.name.toHtmlEscaped() << "</td>"
+                << "<td>" << finalist.apparatus.toHtmlEscaped() << "</td></tr>";
+        }
+        out << "</table>";
+    };
+
+    out << "<h1 style=\"font-size:15pt; margin-top:0px; margin-bottom:8px;\">Final Apparatus</h1>"
+        << "<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\" style=\"margin-top:12px;\"><tr>"
+        << "<td colspan=\"3\">";
+    printTable("Gymnast Starting Order", combined, true);
+    out << "</td></tr><tr><td width=\"48%\" valign=\"top\">";
+    printTable("Women's Starting Order", women, false);
+    out << "</td><td width=\"4%\"></td><td width=\"48%\" valign=\"top\">";
+    printTable("Men's Starting Order", men, false);
+    out << "</td></tr></table>";
     out.flush();
-    DrawHtml(html);
+
+    AddHeader(p_bHFImages);
+    AddFooter(p_bHFImages);
+    AddPageNumber();
+
+    constexpr qreal horizontalMargin = 20;
+    constexpr qreal contentTop = 105;
+    QTextDocument document;
+    document.setDefaultFont(QFont(QStringLiteral("Arial"), 9));
+    document.setDocumentMargin(0);
+    document.setHtml(html);
+    document.setTextWidth(m_painter.viewport().width() - 2 * horizontalMargin);
+
+    m_painter.save();
+    m_painter.translate(horizontalMargin, contentTop);
+    document.drawContents(&m_painter);
+    m_painter.restore();
 }
 
 void CreatePdf::PrintMenAllround(bool p_bHFImages)
