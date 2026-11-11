@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 
@@ -6,6 +8,8 @@ Item {
 //    height: parent.height
     id: idChronoScores
     objectName: "idChronoScores"
+    readonly property real columnWidth: Math.max(0, width - 10) / (12 + 2 / 3)
+    readonly property int columnFontSize: Math.max(width / 120, 6)
 
     Rectangle {
         id: chronoScoresTitleleSpace
@@ -19,13 +23,13 @@ Item {
 
         Item // some sort of a Row
         {
-            property int colWidthUnit: parent.width / 12
+            readonly property real colWidthUnit: idChronoScores.columnWidth
             anchors.margins: 5
             anchors.fill: parent
-            property int fontSize:  Math.max(parent.width / 120, 6)
+            readonly property int fontSize: idChronoScores.columnFontSize
 
 /*
-            Sesso | Nome Cognome | Nazione | Attrezzo | Coeff. difficoltà | Esecuzione | Penalty | Nota finale | Totale
+            Sesso | Nome Cognome | Nazione | Attrezzo | Coeff. difficoltà | Esecuzione | Bonus | Penalità | Nota finale | Totale
  */
             TableTitleItem {
                 id: mwId
@@ -93,6 +97,16 @@ Item {
             }
 
             TableTitleItem {
+                id: bonusScoreId
+                objectName: "BonusScoreId"
+                text: qsTr("Bonus")
+                fontSize: parent.fontSize
+                height: parent.height
+                width: parent.colWidthUnit
+                anchors.left: exeScoreId.right
+            }
+
+            TableTitleItem {
                 id: penaltyScoreId
                 objectName: "PenaltyScoreId"
                 text: "Penalità"
@@ -100,7 +114,7 @@ Item {
                 height: parent.height
                 width: parent.colWidthUnit
 //                imageSource: "/images/Empty.svg"
-                anchors.left: exeScoreId.right
+                anchors.left: bonusScoreId.right
             }
             TableTitleItem {
                 id: finalScoreId
@@ -153,7 +167,10 @@ Item {
     //            width: 200; height: 250
             id: chronoview
             model: ChronoListModel
-            delegate: ChronoListDelegate { }
+            delegate: ChronoListDelegate {
+                columnWidth: idChronoScores.columnWidth
+                columnFontSize: idChronoScores.columnFontSize
+            }
     //                anchors.fill: parent
             width: parent.width
             spacing: 2

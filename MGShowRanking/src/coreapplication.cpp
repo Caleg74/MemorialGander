@@ -51,7 +51,8 @@ CoreApplication::~CoreApplication()
 
 bool CoreApplication::Init(QQmlApplicationEngine& p_qEngine)
 {
-    if (dbInterface::Instance()->loadDriver())
+    auto *database = dbInterface::Instance();
+    if (database->loadDriver())
     {
         qInfo() << "QOBCD driver loaded successfully";
     }
@@ -61,10 +62,13 @@ bool CoreApplication::Init(QQmlApplicationEngine& p_qEngine)
     }
 
     // initialize the database
-    if (!dbInterface::Instance()->initDb(true))
+    if (!database->initDb(true))
     {
         return false;
     }
+
+    if (const int year = database->getActiveEventYear(); year > 0)
+        database->setCurrentEvent(year);
 
     // save it as a class member
     m_pAppEngine = &p_qEngine;

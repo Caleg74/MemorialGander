@@ -12,7 +12,7 @@ public:
     enum SingleMWRoles
     {
         FinalScoreTotalRole = LastGeneralRole,
-        DifficultyScoreSingleMW,
+        ScoreDetailsSingleMW,
         FinalScoreSingleMW
      };
 
@@ -23,13 +23,13 @@ public:
         SG_Women
     };
 
-    SingleMWDataModel(const QString& p_strGender, QObject *parent = 0);
+    explicit SingleMWDataModel(const QString& p_strGender, QObject *parent = nullptr);
 
     ~SingleMWDataModel();
 
-    int rowCount(const QModelIndex & parent = QModelIndex()) const;
+    int rowCount(const QModelIndex & parent = QModelIndex()) const override;
 
-    QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+    QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
 
 //    bool insertRow(int row, const QModelIndex & parent = QModelIndex());
 
@@ -46,7 +46,7 @@ public slots:
 //    void removeItem(QString nameFull);
 
 protected:
-    QHash<int, QByteArray> roleNames() const;
+    QHash<int, QByteArray> roleNames() const override;
 
 private:
 
@@ -58,7 +58,7 @@ private:
 
     SingleGender m_eGender;
 
-    int m_iApparatus;   ///< used a more general int instead of ApparatusList::EApparatusMen/Women
+    int m_iApparatus = ApparatusList::AGFirstApparatus;
 
     QList<SingleMWData> m_rankingList;
 };

@@ -1,7 +1,14 @@
 TEMPLATE = app
 
 QT += sql qml quick quickcontrols2 widgets printsupport
-CONFIG += c++17
+CONFIG += c++17 qmltypes
+QML_IMPORT_NAME = Memorial.Server
+QML_IMPORT_MAJOR_VERSION = 1
+QMLTYPES_FILENAME = qml/Memorial/Server/plugins.qmltypes
+mkpath($$OUT_PWD/qml/Memorial/Server)
+qmlModuleDescription = "module Memorial.Server"
+qmlModuleDescription += "typeinfo plugins.qmltypes"
+write_file($$OUT_PWD/qml/Memorial/Server/qmldir, qmlModuleDescription)
 
 RC_ICONS = ../MGCommon/image/ApplicationRed.ico
 
@@ -82,7 +89,7 @@ OTHER_FILES += \
 RESOURCES += MGServer.qrc
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
-QML_IMPORT_PATH = src/qml
+QML_IMPORT_PATH = src/qml $$OUT_PWD/qml
 
 # Default rules for deployment.
 include(deployment.pri)

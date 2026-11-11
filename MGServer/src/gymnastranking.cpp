@@ -117,6 +117,7 @@ void GymnastRanking::updateSingleScores(int p_iApparatusId, QList<SingleMWData>*
         iter->setFinalScore(sAllScores.FinalScore);
         iter->setDifficultyScore(sAllScores.DifficultyScore);
         iter->setExecutionScore(sAllScores.ExecutionScore);
+        iter->setBonusScore(sAllScores.BonusScore);
         iter->setPenaltyScore(sAllScores.PenaltyScore);
         iter->setForceScore(sAllScores.ForceScore);
     }
@@ -138,6 +139,7 @@ void GymnastRanking::updateAllroundMenScores()
             iter->setFinalScore(apparatus, scores.FinalScore);
             iter->setDifficultyScore(apparatus, scores.DifficultyScore);
             iter->setExecutionScore(apparatus, scores.ExecutionScore);
+            iter->setBonusScore(apparatus, scores.BonusScore);
             iter->setPenaltyScore(apparatus, scores.PenaltyScore);
         }
         iter->CalculateTotalScore();
@@ -160,6 +162,7 @@ void GymnastRanking::updateAllroundWomenScores()
             iter->setFinalScore(apparatus, scores.FinalScore);
             iter->setDifficultyScore(apparatus, scores.DifficultyScore);
             iter->setExecutionScore(apparatus, scores.ExecutionScore);
+            iter->setBonusScore(apparatus, scores.BonusScore);
             iter->setPenaltyScore(apparatus, scores.PenaltyScore);
         }
         iter->CalculateTotalScore();

@@ -7,10 +7,42 @@
 #include "apparatuslist.h"
 
 dbIfaceBase::dbIfaceBase()
-: dBConnection()
+    : m_iCurrentEvent(QDate::currentDate().year())
 {
-    QDate qDate = QDate::currentDate();
-    m_iCurrentYear = qDate.year();
+}
+
+int dbIfaceBase::getCurrentEvent() const
+{
+    return m_iCurrentEvent;
+}
+
+void dbIfaceBase::setCurrentEvent(int event)
+{
+    m_iCurrentEvent = event;
+}
+
+int dbIfaceBase::getActiveEventYear() const
+{
+    if (!m_bInitialized)
+        return 0;
+
+    QSqlQuery query(QSqlDatabase::database(QStringLiteral("ConnMG")));
+    if (!query.exec(QStringLiteral("SELECT CAST(EXTRACT(YEAR FROM year) AS integer) "
+                                   "FROM sport_event WHERE is_current_event IS TRUE"))) {
+        qWarning() << "Cannot read the active edition:" << query.lastError();
+        return 0;
+    }
+
+    if (!query.next())
+        return 0;
+
+    const int year = query.value(0).toInt();
+    if (query.next()) {
+        qWarning() << "Multiple editions are marked as active";
+        return 0;
+    }
+
+    return year;
 }
 
 void dbIfaceBase::getCountriesList(QStringList* p_pList)
@@ -363,11 +395,11 @@ int dbIfaceBase::getCurrentEventId()
         QSqlQuery query(db);
 
         query.exec("SELECT id, year FROM sport_event");
+        const QString eventYear = QString::number(getCurrentEvent());
 
         while (query.next())
         {
-            if (query.value(1).toString().startsWith(QString::number(m_iCurrentYear, 10)))    // ORI
-//            if (query.value(1).toString().startsWith(QString::number(2026, 10)))    // just for test
+            if (query.value(1).toString().startsWith(eventYear))
             {
                 eventId = query.value(0).toInt();
             }
@@ -375,7 +407,7 @@ int dbIfaceBase::getCurrentEventId()
 
         if (eventId == 0)
         {
-            qCritical() << "No Id found for event year: " << m_iCurrentYear;
+            qCritical() << "No Id found for event year: " << getCurrentEvent();
         }
     }
     else
@@ -470,7 +502,7 @@ float dbIfaceBase::getDifficultyScore(const int p_iAthleteId, const int p_iAppar
 
         if (iEventId == 0)
         {
-            qCritical() << "No Id found for event year: " << m_iCurrentYear;
+            qCritical() << "No Id found for event year: " << getCurrentEvent();
         }
     }
     else
@@ -506,7 +538,7 @@ float dbIfaceBase::getFinalScore(const int p_iAthleteId, const int p_iApparatusI
 
         if (iEventId == 0)
         {
-            qCritical() << "No Id found for event year: " << m_iCurrentYear;
+            qCritical() << "No Id found for event year: " << getCurrentEvent();
         }
     }
     else
@@ -519,7 +551,7 @@ float dbIfaceBase::getFinalScore(const int p_iAthleteId, const int p_iApparatusI
 
 AllScores dbIfaceBase::getAllScores(const int p_iAthleteId, const int p_iApparatusId)
 {
-    AllScores allScores = {0.0, 0.0, 0.0, 0.0, 0, false};
+    AllScores allScores{};
 
     if (m_bInitialized)
     {
@@ -529,7 +561,7 @@ AllScores dbIfaceBase::getAllScores(const int p_iAthleteId, const int p_iApparat
         const int iEventId = getCurrentEventId();
 
         query.prepare("SELECT difficulty_score, execution_score, penalty_score, final_score, "
-                      "force_score, final_apparatus FROM scores "
+                      "force_score, final_apparatus, bonus_score FROM scores "
                       "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?");
         query.addBindValue(iEventId);
         query.addBindValue(p_iAthleteId);
@@ -544,11 +576,12 @@ AllScores dbIfaceBase::getAllScores(const int p_iAthleteId, const int p_iApparat
             allScores.FinalScore = query.value(3).toFloat();
             allScores.ForceScore = query.value(4).toInt();
             allScores.IsFinalApparatus = query.value(5).toBool();
+            allScores.BonusScore = query.value(6).toFloat();
         }
 
         if (iEventId == 0)
         {
-            qCritical() << "No Id found for event year: " << m_iCurrentYear;
+            qCritical() << "No Id found for event year: " << getCurrentEvent();
         }
     }
     else
@@ -584,7 +617,7 @@ int dbIfaceBase::getForceScore(const int p_iAthleteId, const int p_iApparatusId)
 
         if (iEventId == 0)
         {
-            qCritical() << "No Id found for event year: " << m_iCurrentYear;
+            qCritical() << "No Id found for event year: " << getCurrentEvent();
         }
     }
     else
@@ -619,7 +652,7 @@ float dbIfaceBase::getAllroundTotalScore(const int p_iAthleteId)
 
         if (iEventId == 0)
         {
-            qCritical() << "No Id found for event year: " << m_iCurrentYear;
+            qCritical() << "No Id found for event year: " << getCurrentEvent();
         }
     }
     else
@@ -639,7 +672,7 @@ void dbIfaceBase::retrieveChronologicalList(QList<QStringList>& p_strChronoList)
         const int iEventId = getCurrentEventId();
 
         query.prepare("SELECT id, gender, fullname, nation, apparatus, difficulty_score, "
-                      "execution_score, penalty_score, final_score, total_score "
+                      "execution_score, bonus_score, penalty_score, final_score, total_score "
                       "FROM chrono_list_vw WHERE event_id = ?");
         query.addBindValue(iEventId);
         query.exec();
@@ -654,9 +687,10 @@ void dbIfaceBase::retrieveChronologicalList(QList<QStringList>& p_strChronoList)
                     << query.value(4).toString().trimmed()  // apparatus
                     << query.value(5).toString().trimmed()  // difficulty_score
                     << query.value(6).toString().trimmed()  // execution_score
-                    << query.value(7).toString().trimmed()  // penalty_score
-                    << query.value(8).toString().trimmed()  // final_score
-                    << query.value(9).toString().trimmed(); // total_score
+                    << query.value(7).toString().trimmed()  // bonus_score
+                    << query.value(8).toString().trimmed()  // penalty_score
+                    << query.value(9).toString().trimmed()  // final_score
+                    << query.value(10).toString().trimmed(); // total_score
 
             p_strChronoList << strData;
 //            qInfo() << "Athlete retrieved: " << strData;

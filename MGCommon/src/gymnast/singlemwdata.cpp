@@ -103,9 +103,19 @@ void SingleMWData::setExecutionScore(float p_fScore)
     m_sScore.ExecutionScore = p_fScore;
 }
 
-QString SingleMWData::getExecutionScore() const
+QString SingleMWData::getExecutionScore(int decimals) const
 {
-    return QString::number(m_sScore.ExecutionScore, 'f', 3);
+    return QString::number(m_sScore.ExecutionScore, 'f', decimals);
+}
+
+void SingleMWData::setBonusScore(float score)
+{
+    m_sScore.BonusScore = score;
+}
+
+float SingleMWData::getBonusScore() const
+{
+    return m_sScore.BonusScore;
 }
 
 void SingleMWData::setPenaltyScore(float p_fScore)
@@ -113,9 +123,9 @@ void SingleMWData::setPenaltyScore(float p_fScore)
     m_sScore.PenaltyScore = p_fScore;
 }
 
-QString SingleMWData::getPenaltyScore() const
+QString SingleMWData::getPenaltyScore(int decimals) const
 {
-    return QString::number(std::abs(m_sScore.PenaltyScore), 'f', 3);
+    return QString::number(std::abs(m_sScore.PenaltyScore), 'f', decimals);
 }
 
 void SingleMWData::setFinalScore(float p_fScore)

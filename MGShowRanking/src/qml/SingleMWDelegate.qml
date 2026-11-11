@@ -1,8 +1,10 @@
-import QtQuick 2.0
+import QtQuick
 
 Item {
-    id: singleMDelegate
-    width: parent.width
+    id: singleDelegate
+    required property var model
+
+    width: ListView.view?.width ?? 0
     height: 50
 
     Rectangle {
@@ -17,7 +19,7 @@ Item {
 
         Item // some sort of a Row
         {
-            property int apparatusWidth: parent.width / 2.5
+            readonly property real apparatusWidth: parent.width * 0.46
             anchors.margins: 5
             anchors.fill: parent
 //            height: parent.height
@@ -27,9 +29,9 @@ Item {
 
             GymnastPosItem {
                 id: rankId
-                rank: Rank           // roleName
-                nameFull: NameFull   // roleName
-                flagImage: FlagImage // roleName
+                rank: singleDelegate.model.Rank
+                nameFull: singleDelegate.model.NameFull
+                flagImage: singleDelegate.model.FlagImage
                 fontSize: parent.fontSize
                 anchors.left: parent.left
                 anchors.right: singleScoreMId.left
@@ -38,8 +40,8 @@ Item {
 
             ScoreItem {
                 id: singleScoreMId
-                difficultyScore: DifficultyScore_SingleMW  // roleName
-                finalScore: FinalScore_SingleMW  // roleName
+                scoreDetails: singleDelegate.model.ScoreDetails_SingleMW
+                finalScore: singleDelegate.model.FinalScore_SingleMW
                 fontSize: parent.fontSize
                 width: parent.apparatusWidth
                 separatorVisible: false

@@ -3,7 +3,6 @@
 
 #include "athletedata.h"
 #include <QString>
-#include <QVector>
 
 class ChronoListData
 {
@@ -32,6 +31,9 @@ public:
 
     void setExecutionScore(const float p_fExecutionScore);
     QString getExecutionScore() const;
+
+    void setBonusScore(float score);
+    QString getBonusScore() const;
 
     void setPenaltyScore(const float p_fPenaltyScore);
     QString getPenaltyScore() const;

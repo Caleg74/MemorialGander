@@ -10,6 +10,8 @@ public:
 
     static dbInterface* Instance();
 
+    [[nodiscard]] bool saveActiveEvent(int year);
+
     bool insertGymnast(const QString& p_strFirstName,
                        const QString& p_strLastName,
                        const QString& p_strGender,

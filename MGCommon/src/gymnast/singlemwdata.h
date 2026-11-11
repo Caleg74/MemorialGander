@@ -13,6 +13,7 @@ public:
     {
         float DifficultyScore;
         float ExecutionScore;
+        float BonusScore;
         float PenaltyScore;
         float FinalScore;
         int   ForceScore;   // Legacy metadata; not used for sporting tiebreaks
@@ -34,10 +35,13 @@ public:
     QString getDifficultyScore() const;
 
     void setExecutionScore(float p_fScore);
-    QString getExecutionScore() const;
+    QString getExecutionScore(int decimals = 3) const;
+
+    void setBonusScore(float score);
+    float getBonusScore() const;
 
     void setPenaltyScore(float p_fScore);
-    QString getPenaltyScore() const;
+    QString getPenaltyScore(int decimals = 3) const;
 
     void setFinalScore(float p_fScore);
     QString getFinalScore() const;

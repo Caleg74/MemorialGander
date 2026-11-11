@@ -64,8 +64,7 @@ AthleteData::AthleteData(const Gender_t p_eGender,
 
     for (int i=0; i<iApparatusMax; i++)
     {
-        SScore score = {0.0, 0.0, 0.0, 0.0, false, false};
-        m_vecScore.push_back(score);
+        m_vecScore.append(SScore{});
     }
 }
 
@@ -223,6 +222,16 @@ QString AthleteData::getExecutionScore(int p_iApparatus) const
         return " - ";
     else
         return QString::number(m_vecScore[p_iApparatus].ExecutionScore, 'f', 3);
+}
+
+void AthleteData::setBonusScore(int apparatus, float score)
+{
+    m_vecScore[apparatus].BonusScore = score;
+}
+
+float AthleteData::getBonusScore(int apparatus) const
+{
+    return m_vecScore.at(apparatus).BonusScore;
 }
 
 void AthleteData::setPenaltyScore(int p_iApparatus, float p_fScore)

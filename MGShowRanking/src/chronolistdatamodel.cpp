@@ -70,8 +70,9 @@ void ChronoListDataModel::updateScores()
             iter->setApparatusName(dbRawList.at(iObjIndex).at(4));
             iter->setDifficultyScore(dbRawList.at(iObjIndex).at(5).toFloat());
             iter->setExecutionScore(dbRawList.at(iObjIndex).at(6).toFloat());
-            iter->setPenaltyScore(dbRawList.at(iObjIndex).at(7).toFloat());
-            iter->setFinalScore(dbRawList.at(iObjIndex).at(8).toFloat());
+            iter->setBonusScore(dbRawList.at(iObjIndex).at(7).toFloat());
+            iter->setPenaltyScore(dbRawList.at(iObjIndex).at(8).toFloat());
+            iter->setFinalScore(dbRawList.at(iObjIndex).at(9).toFloat());
             int iAthleteId = dbRawList.at(iObjIndex).at(0).toInt();
             iter->setTotScore(dbInterface::Instance()->getAllroundTotalScore(iAthleteId));
             iter->setIsLatestScore(iObjIndex == 0); // highlight only 1st row
@@ -138,6 +139,8 @@ QVariant ChronoListDataModel::data(const QModelIndex & index, int role) const {
         return chronoItem.getDifficultyScore();
     else if (role == ExecutionScoreRole)
         return chronoItem.getExecutionScore();
+    else if (role == BonusScoreRole)
+        return chronoItem.getBonusScore();
     else if (role == PenaltyScoreRole)
         return chronoItem.getPenaltyScore();
     else if (role == FinalScoreRole)
@@ -163,6 +166,7 @@ QHash<int, QByteArray> ChronoListDataModel::roleNames() const {
     roles[ApparatusRole        ]      = "Apparatus";
     roles[DifficultyScoreRole  ]      = "DifficultyScore";
     roles[ExecutionScoreRole   ]      = "ExecutionScore";
+    roles[BonusScoreRole       ]      = "BonusScore";
     roles[PenaltyScoreRole     ]      = "PenaltyScore";
     roles[FinalScoreRole       ]      = "FinalScore";
     roles[GymnastTotalScoreRole]      = "GymnastTotalScore";

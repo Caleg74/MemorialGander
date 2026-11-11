@@ -1,4 +1,4 @@
-#include "GymnastSelectModel.h"
+#include "gymnastselectmodel.h"
 #include <QDebug>
 #include "apparatuslist.h"
 #include "dbinterface.h"
@@ -23,19 +23,21 @@ GymnastSelectModel* GymnastSelectModel::Instance()
 GymnastSelectModel::GymnastSelectModel(QObject *parent)
     : QAbstractListModel(parent)
 {
-    RetrieveGymnastList();
+    ApparatusList::Instance()->load();
+    reload();
 }
 
-void GymnastSelectModel::RetrieveGymnastList()
+void GymnastSelectModel::reload()
 {
-    ApparatusList::Instance()->load();
+    QList<QStringList> subscriptions;
+    dbInterface::Instance()->retrieveGymnastSubscriptionList(subscriptions);
 
-    QList<QStringList> p_strGymnList;
-    dbInterface::Instance()->retrieveGymnastSubscriptionList(p_strGymnList);
+    beginResetModel();
+    m_gymnastList.clear();
 
-    for (const QStringList &gymnastData : std::as_const(p_strGymnList)) {
+    for (const QStringList &gymnastData : std::as_const(subscriptions)) {
         if (gymnastData.size() < 7) {
-            qCritical() << "RetrieveGymnastList(): incomplete gymnast data" << gymnastData;
+            qCritical() << "GymnastSelectModel::reload(): incomplete gymnast data" << gymnastData;
             continue;
         }
 
@@ -47,17 +49,15 @@ void GymnastSelectModel::RetrieveGymnastList()
         const QString finalApparatusName = ApparatusList::Instance()->apparatusName(gymnastData[6].toInt());
         const int finalApparatusIndex = qMax(0, apparatusList.indexOf(finalApparatusName));
 
-        GymnastSelectData cNewGymnast(gymnastData[0].toInt(),
-                                      gymnastData[1].toInt(),
-                                      gymnastFullText,
-                                      gender,
-                                      apparatusList,
-                                      finalApparatusIndex);
-
-        beginInsertRows(QModelIndex(), rowCount(), rowCount());
-        m_gymnastList << cNewGymnast;
-        endInsertRows();
+        m_gymnastList.append(GymnastSelectData(gymnastData[0].toInt(),
+                                              gymnastData[1].toInt(),
+                                              gymnastFullText,
+                                              gender,
+                                              apparatusList,
+                                              finalApparatusIndex));
     }
+
+    endResetModel();
 }
 
 bool GymnastSelectModel::addItem(QString gymnastFullTxt)
@@ -73,6 +73,8 @@ bool GymnastSelectModel::addItem(QString gymnastFullTxt)
 
     int iAthleteId = dbInterface::Instance()->getGymnastId(firstName, lastName);
     int iEventId = dbInterface::Instance()->getCurrentEventId();
+    if (iEventId == 0)
+        return false;
 
     if (!dbInterface::Instance()->isGymnastAlreadyRegistered(iAthleteId, iEventId))
     {

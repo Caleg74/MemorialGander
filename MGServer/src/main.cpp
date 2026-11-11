@@ -1,13 +1,14 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
-#include "CoreApplication.h"
+#include "coreapplication.h"
 #include "countrylist.h"
 #include "gymnastselectionlist.h"
 
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    QCoreApplication::setApplicationName(QStringLiteral("MGServer"));
 
     QQuickStyle::setStyle("Basic");
     CoreApplication cCoreApp;
@@ -19,6 +20,9 @@ int main(int argc, char *argv[])
 
     GymnastSelectionList::Instance()->Init(engine);
 
+    engine.setInitialProperties({
+        {QStringLiteral("coreApplication"), QVariant::fromValue(&cCoreApp)}
+    });
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     if (engine.rootObjects().isEmpty())
         return 1;

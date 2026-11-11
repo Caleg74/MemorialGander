@@ -12,6 +12,7 @@ struct AllScores
     float FinalScore;
     int   ForceScore;   // to be used only in case of equal score
     bool  IsFinalApparatus;
+    float BonusScore;
 };
 
 class dbIfaceBase : public dBConnection
@@ -27,6 +28,10 @@ public:
 
 
     dbIfaceBase();
+
+    [[nodiscard]] int getCurrentEvent() const;
+    void setCurrentEvent(int event);
+    [[nodiscard]] int getActiveEventYear() const;
 
     // for cbb
     void getCountriesList(QStringList *p_pList);
@@ -81,9 +86,8 @@ public:
      * @return true if a valid entry has been found */
     bool getLatestScore(const QString p_strGender, int* p_pAthleteId, int* p_pApparatusId);
 
-protected:
-
-    int m_iCurrentYear;
+private:
+    int m_iCurrentEvent;
 };
 
 #endif // DBIFACEBASE_H

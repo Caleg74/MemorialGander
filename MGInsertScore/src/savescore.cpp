@@ -17,6 +17,7 @@ bool SaveScore::onSaveScore(QString p_strGymnastFullTxt,
                             QString p_strApparatus,
                             QString p_strDifficultyScore,
                             QString p_strExecutionScore,
+                            const QString &bonusScore,
                             QString p_strPenaltyScore,
                             QString p_strFinalScore,
                             bool p_bFinalApparatus)
@@ -27,6 +28,14 @@ bool SaveScore::onSaveScore(QString p_strGymnastFullTxt,
                 << p_strDifficultyScore <<  ", "
                 << p_strFinalScore <<   ", "
                 << strFinalApparatus;
+
+    const QString bonusText = bonusScore.trimmed().replace(u',', u'.');
+    bool bonusOk = true;
+    const float bonus = bonusText.isEmpty() ? 0.0f : bonusText.toFloat(&bonusOk);
+    if (!bonusOk || !std::isfinite(bonus) || bonus < 0.0f) {
+        emit messageRequested(tr("Warning"), tr("Il bonus deve essere un numero maggiore o uguale a zero."));
+        return false;
+    }
 
     QString strErr = "";
     bool bConvDifficultyScoreOk = false;
@@ -68,7 +77,8 @@ bool SaveScore::onSaveScore(QString p_strGymnastFullTxt,
         emit messageRequested(tr("Warning"), strErr);
         return false;
     }
-    const bool saved = SendToDb(p_strGymnastFullTxt, p_strApparatus, fDifficultyScore, fExecutionScore, fPenaltyScore, fFinalScore, p_bFinalApparatus);
+    const bool saved = SendToDb(p_strGymnastFullTxt, p_strApparatus, fDifficultyScore, fExecutionScore,
+                                bonus, fPenaltyScore, fFinalScore, p_bFinalApparatus);
     if (!saved)
         emit messageRequested(tr("Salvataggio fallito"), tr("Il punteggio non è stato salvato. Verifica la selezione e la connessione."));
     return saved;
@@ -134,6 +144,7 @@ bool SaveScore::SendToDb(QString& p_strGymnastFullTxt,
                          QString& p_strApparatus,
                          float p_fDifficultyScore,
                          float p_fExecutionScore,
+                         float p_fBonusScore,
                          float p_fPenaltyScore,
                          float p_fFinalScore,
                          bool p_bFinalApparatus)
@@ -163,13 +174,13 @@ bool SaveScore::SendToDb(QString& p_strGymnastFullTxt,
         // update existing score
         return dbInterface::Instance()->updateScore(iEventId, iAthleteId,
                                              iApparatusId, p_fDifficultyScore, p_fExecutionScore,
-                                             p_fPenaltyScore, p_fFinalScore, p_bFinalApparatus);
+                                             p_fBonusScore, p_fPenaltyScore, p_fFinalScore, p_bFinalApparatus);
     }
     else
     {
         // insert a new one
         return dbInterface::Instance()->setNewScore(iEventId, iAthleteId,
                                              iApparatusId, p_fDifficultyScore, p_fExecutionScore,
-                                             p_fPenaltyScore, p_fFinalScore, p_bFinalApparatus);
+                                             p_fBonusScore, p_fPenaltyScore, p_fFinalScore, p_bFinalApparatus);
     }
 }

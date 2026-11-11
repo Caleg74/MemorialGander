@@ -27,7 +27,8 @@ Item {
         txtDifficultyScore.text = "0.000"
         txtExecutionScore.text = "0.000"
         txtFinalScore.text = "0.000"
-        txtPenaltyScore.text = "0.000"
+        txtPenaltyScore.text = "0.0"
+        txtBonusScore.text = "0.0"
         txtAvgPenalty.text = "0.000"
         txtPenalty1.text = "0.000"
         txtPenalty2.text = "0.000"
@@ -49,6 +50,7 @@ Item {
         if (score.found) {
             txtDifficultyScore.text = score.difficulty
             txtPenaltyScore.text = score.penalty
+            txtBonusScore.text = score.bonus
         }
     }
 
@@ -124,6 +126,7 @@ Item {
 
             let fFinalScore = ( parseFloat(txtDifficultyScore.text.replace(",", "."))
                               + parseFloat(txtExecutionScore.text.replace(",", "."))
+                              + Number(txtBonusScore.text.replace(",", "."))
                               - parseFloat(txtPenaltyScore.text.replace(",", ".")))
 
             finalScore = floatToString(fFinalScore, precision);
@@ -245,7 +248,7 @@ Item {
         //                    placeholderText: "0.000"
                             text: "0.000"
                             font.pointSize: 15
-                            KeyNavigation.tab: txtPenalty1
+                            KeyNavigation.tab: txtBonusScore
                             onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
@@ -281,6 +284,33 @@ Item {
                             font.pointSize: 15
                         }
                     }
+                    Row {
+                        spacing: 10
+
+                        Text {
+                            width: 120
+                            text: "+  ev. Bonus"
+                            renderType: Text.NativeRendering
+                            font.pointSize: 15
+                            color: "#0a3f60"
+                          }
+
+                        StyleMGTextInput {
+                            id: txtBonusScore
+                            width: 100
+                            activeFocusOnPress: true
+        //                    style:textEditMGStyle
+        //                    placeholderText: "0.000"
+                            text: "0.0"
+                            font.pointSize: 15
+                            KeyNavigation.tab: txtPenaltyScore
+                            onTextChanged: scoreForm.calcFinalScore()
+                            onFocusChanged:{
+                                if(focus)
+                                   selectAll()
+                            }
+                        }
+                    }
 
                     Row {
                         spacing: 10
@@ -299,9 +329,9 @@ Item {
                             activeFocusOnPress: true
         //                    style:textEditMGStyle
         //                    placeholderText: "0.000"
-                            text: "0.000"
+                            text: "0.0"
                             font.pointSize: 15
-                            KeyNavigation.tab: txtDifficultyScore
+                            KeyNavigation.tab: txtPenalty1
                             onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
@@ -451,7 +481,7 @@ Item {
         //                    placeholderText: "0.000"
                             text: "0.000"
                             font.pointSize: 15
-                            KeyNavigation.tab: txtPenaltyScore
+                            KeyNavigation.tab: txtDifficultyScore
                             onTextChanged: scoreForm.calcFinalScore()
                             onFocusChanged:{
                                 if(focus)
@@ -490,6 +520,7 @@ Item {
                                   cbbAppartus.currentText,
                                   txtDifficultyScore.text,
                                   txtExecutionScore.text,
+                                  txtBonusScore.text,
                                   txtPenaltyScore.text,
                                   txtFinalScore.text,
                                   chkFinalApparatus.checked)

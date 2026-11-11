@@ -15,6 +15,7 @@ public:
         ApparatusRole,
         DifficultyScoreRole,
         ExecutionScoreRole,
+        BonusScoreRole,
         PenaltyScoreRole,
         FinalScoreRole,
         GymnastTotalScoreRole,
@@ -26,9 +27,9 @@ public:
 
     ~ChronoListDataModel();
 
-    int rowCount(const QModelIndex & parent = QModelIndex()) const;
+    int rowCount(const QModelIndex & parent = QModelIndex()) const override;
 
-    QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+    QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
 
 //    bool insertRow(int row, const QModelIndex & parent = QModelIndex());
 
@@ -42,7 +43,7 @@ public slots:
 //    void removeItem(QString nameFull);
 
 protected:
-    QHash<int, QByteArray> roleNames() const;
+    QHash<int, QByteArray> roleNames() const override;
 
     virtual bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
 private:

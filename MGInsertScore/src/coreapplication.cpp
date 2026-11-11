@@ -2,7 +2,6 @@
 #include "apparatuslist.h"
 #include "dbinterface.h"
 #include <QDebug>
-#include <cmath>
 
 CoreApplication::CoreApplication(QObject *parent) : QObject(parent)
 {
@@ -19,6 +18,9 @@ bool CoreApplication::initialize()
         qCritical() << "Database initialization failed:" << database->getLastError();
         return false;
     }
+    if (const int year = database->getActiveEventYear(); year > 0)
+        database->setCurrentEvent(year);
+
     ApparatusList::Instance()->load();
     setCategories(true, true);
     return true;
@@ -67,14 +69,15 @@ QVariantMap CoreApplication::existingScore(const QString &gymnast, const QString
     QString gender = database->getGender(athleteId);
     const int apparatusId = database->getApparatusId(apparatusName, gender);
     const int eventId = database->getCurrentEventId();
-    if (apparatusId <= 0 || eventId <= 0 || !database->isScorePresent(eventId, athleteId, apparatusId))
+    const auto score = database->getExistingScore(eventId, athleteId, apparatusId);
+    if (!score)
         return {{QStringLiteral("found"), false}};
 
-    const AllScores scores = database->getAllScores(athleteId, apparatusId);
     return {
         {QStringLiteral("found"), true},
-        {QStringLiteral("difficulty"), QString::number(scores.DifficultyScore, 'f', 3)},
-        {QStringLiteral("penalty"), QString::number(std::abs(scores.PenaltyScore), 'f', 3)}
+        {QStringLiteral("difficulty"), QString::number(score->difficulty, 'f', 3)},
+        {QStringLiteral("penalty"), score->penalty},
+        {QStringLiteral("bonus"), score->bonus}
     };
 }
 
@@ -90,11 +93,13 @@ void CoreApplication::setCategories(bool men, bool women)
 
 bool CoreApplication::saveScore(const QString &gymnast, const QString &apparatus,
                                const QString &difficulty, const QString &execution,
-                               const QString &penalty, const QString &finalScore, bool finalApparatus)
+                               const QString &bonus, const QString &penalty,
+                               const QString &finalScore, bool finalApparatus)
 {
     if (m_gymnasts.comboList().indexOf(gymnast) <= 0 || m_apparatus.comboList().indexOf(apparatus) <= 0) {
         emit messageRequested(tr("Selezione incompleta"), tr("Seleziona un ginnasta e un attrezzo."));
         return false;
     }
-    return m_saveScore.onSaveScore(gymnast, apparatus, difficulty, execution, penalty, finalScore, finalApparatus);
+    return m_saveScore.onSaveScore(gymnast, apparatus, difficulty, execution,
+                                   bonus, penalty, finalScore, finalApparatus);
 }

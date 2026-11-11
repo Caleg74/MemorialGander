@@ -10,7 +10,7 @@ Item {
     required property var apparatusList
     required property int finalApparatusIndex
 
-    width: (parent.width * 2/3) - 50
+    width: Math.max(0, (ListView.view?.width ?? 0) * 2 / 3 - 50)
     height: 50
 
     BorderImage {

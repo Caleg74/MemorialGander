@@ -26,7 +26,8 @@ public slots:
     void setCategories(bool men, bool women);
     bool saveScore(const QString &gymnast, const QString &apparatus,
                    const QString &difficulty, const QString &execution,
-                   const QString &penalty, const QString &finalScore, bool finalApparatus);
+                   const QString &bonus, const QString &penalty,
+                   const QString &finalScore, bool finalApparatus);
 signals:
     void finalApparatusIndexChanged();
     void messageRequested(const QString &title, const QString &text);

@@ -44,7 +44,7 @@ private slots:
         QCOMPARE(controller.gymnasts()->count(), 1);
         QCOMPARE(controller.apparatus()->count(), 1);
         QSignalSpy messages(&controller, &CoreApplication::messageRequested);
-        QVERIFY(!controller.saveScore("Seleziona ginnasti..", "Attrezzo..", "5", "9", "0", "14", false));
+        QVERIFY(!controller.saveScore("Seleziona ginnasti..", "Attrezzo..", "5", "9", "0", "0", "14", false));
         QCOMPARE(messages.count(), 1);
         QVERIFY(!QSqlDatabase::contains("ConnMG"));
     }
@@ -63,7 +63,7 @@ private slots:
         QFETCH(QString, difficulty);
         SaveScore saver;
         QSignalSpy messages(&saver, &SaveScore::messageRequested);
-        QVERIFY(!saver.onSaveScore("Test, Athlete", "Suolo", difficulty, "9", "0", "14", false));
+        QVERIFY(!saver.onSaveScore("Test, Athlete", "Suolo", difficulty, "9", "0", "0", "14", false));
         QCOMPARE(messages.count(), 1);
         QVERIFY(!QSqlDatabase::contains("ConnMG"));
     }
@@ -98,7 +98,7 @@ private slots:
             QCOMPARE(controller.gymnasts()->count(), 1);
             QVERIFY(!QSqlDatabase::contains("ConnMG"));
             // Verify the QML Connections handler displays controller errors.
-            QVERIFY(!controller.saveScore("", "", "5", "9", "0", "14", false));
+            QVERIFY(!controller.saveScore("", "", "5", "9", "0", "0", "14", false));
             QTest::qWait(50);
             auto *dialog = window->findChild<QObject*>("messageDialog");
             QVERIFY(dialog);

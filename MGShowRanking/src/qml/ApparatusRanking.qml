@@ -1,11 +1,9 @@
 import QtQuick
-import QtQuick.Controls
 
 Item {
-//    width: parent.width
-//    height: parent.height
     id: idSingleRanking
     objectName: "idSingleRanking"
+    readonly property real panelWidth: width * 0.45
 
     Rectangle {
 
@@ -18,7 +16,7 @@ Item {
 //        opacity: 1 - backendHelper.opacity
 
         ApparatusRankingM {  // some sort of a Column
-            width: (parent.width * 3 / 4)
+            width: idSingleRanking.panelWidth
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter
@@ -34,7 +32,7 @@ Item {
 
         ApparatusRankingW {  // some sort of a Column
 
-            width: (parent.width * 3 / 4)
+            width: idSingleRanking.panelWidth
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter

@@ -56,16 +56,15 @@ private:
     void PrintAllroundTableBody(QTextStream& out, const QList<AthleteData>& gymnasts,
                                int apparatusEnd);
     void PrintSingleMApparatusTableTitle(QTextStream& out, ApparatusList::EApparatusMen p_eApparatus);
-    void PrintSingleMApparatusTableBody(QTextStream& out);
     void PrintSingleWApparatusTableTitle(QTextStream& out, ApparatusList::EApparatusWomen p_eApparatus);
-    void PrintSingleWApparatusTableBody(QTextStream& out);
+    void PrintSingleApparatusTableBody(QTextStream& out, const QList<SingleMWData>& gymnasts);
 
     void AddHeader(bool p_bHFImages);
     void AddFooter(bool p_bHFImages);
 
     void AddPageNumber();
     void DrawAllroundHtml(QString html);
-    void DrawHtml(const QString& html);
+    void DrawHtml(const QString& html, const QRectF& contentArea = {});
 
     QTextStream m_textStream;
 

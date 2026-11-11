@@ -1,8 +1,12 @@
-import QtQuick 2.0
+import QtQuick
 
 Item {
-    id: allroundMDelegate
-    width: parent.width
+    id: chronoDelegate
+    required property real columnWidth
+    required property int columnFontSize
+    required property var model
+
+    width: ListView.view?.width ?? 0
     height: 45
 
 
@@ -23,27 +27,18 @@ Item {
 
         Rectangle // some sort of a Row
         {
-            property bool latestScore;
-
-            onLatestScoreChanged: {
-                if (latestScore) {
-                    gradient = grad
-                } else {
-                    gradient = null
-                }
-            }
             id: chronoRow
-            property int colWidthUnit: parent.width / 12
+            readonly property real colWidthUnit: chronoDelegate.columnWidth
             anchors.margins: 5
             anchors.fill: parent
 //            height: parent.height
 //            width: parent.width
-            property int fontSize:  Math.max(parent.width / 120, 6)
-            latestScore: LatestScore   // roleName
+            readonly property int fontSize: chronoDelegate.columnFontSize
+            gradient: chronoDelegate.model.LatestScore ? grad : null
 
             GeneralTxtItem {
                 id: mwId
-                generalText: MenWomen   // roleName
+                generalText: chronoDelegate.model.MenWomen
                 fontSize: parent.fontSize
                 width: parent.colWidthUnit * 2 / 3
                 anchors.left: parent.left
@@ -51,8 +46,8 @@ Item {
 
             GymnastPosItem {
                 id: nameId
-                nameFull: NameFull   // roleName
-                flagImage: FlagImage // roleName
+                nameFull: chronoDelegate.model.NameFull
+                flagImage: chronoDelegate.model.FlagImage
                 fontSize: parent.fontSize
                 width: parent.colWidthUnit * 3
                 anchors.left: mwId.right
@@ -60,7 +55,7 @@ Item {
 
             GeneralTxtItem {
                 id: countryId
-                generalText: Country   // roleName
+                generalText: chronoDelegate.model.Country
                 fontSize: parent.fontSize
                 width: parent.colWidthUnit
                 anchors.left: nameId.right
@@ -68,7 +63,7 @@ Item {
 
             GeneralTxtItem {
                 id: apparatusId
-                generalText: Apparatus   // roleName
+                generalText: chronoDelegate.model.Apparatus
                 fontSize: parent.fontSize
                 width: parent.colWidthUnit * 2
                 anchors.left: countryId.right
@@ -76,7 +71,7 @@ Item {
 
             GeneralTxtItem {
                 id: difficultyScoreId
-                generalText: DifficultyScore   // roleName
+                generalText: chronoDelegate.model.DifficultyScore
                 fontSize: parent.fontSize
                 fontBold: true
                 width: parent.colWidthUnit
@@ -85,23 +80,31 @@ Item {
 
             GeneralTxtItem {
                 id: exeScoreId
-                generalText: ExecutionScore   // roleName
+                generalText: chronoDelegate.model.ExecutionScore
                 fontSize: parent.fontSize
                 width: parent.colWidthUnit
                 anchors.left: difficultyScoreId.right
             }
 
             GeneralTxtItem {
-                id: penaltyScoreId
-                generalText: PenaltyScore   // roleName
+                id: bonusScoreId
+                generalText: chronoDelegate.model.BonusScore
                 fontSize: parent.fontSize
                 width: parent.colWidthUnit
                 anchors.left: exeScoreId.right
             }
 
             GeneralTxtItem {
+                id: penaltyScoreId
+                generalText: chronoDelegate.model.PenaltyScore
+                fontSize: parent.fontSize
+                width: parent.colWidthUnit
+                anchors.left: bonusScoreId.right
+            }
+
+            GeneralTxtItem {
                 id: finalScoreId
-                generalText: FinalScore   // roleName
+                generalText: chronoDelegate.model.FinalScore
                 fontSize: parent.fontSize
                 fontBold: true
                 width: parent.colWidthUnit
@@ -110,7 +113,7 @@ Item {
 
             GeneralTxtItem {
                 id: gymnastTotId
-                generalText: GymnastTotalScore   // roleName
+                generalText: chronoDelegate.model.GymnastTotalScore
                 fontSize: parent.fontSize
                 width: parent.colWidthUnit
                 anchors.left: finalScoreId.right

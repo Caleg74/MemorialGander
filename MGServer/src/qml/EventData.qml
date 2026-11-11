@@ -1,50 +1,59 @@
 import QtQuick
-import QtQuick.Controls
+import Memorial.Server
 
 Item {
-    width: parent.width
-    height: parent.height
-
+    id: eventData
+    required property CoreApplication coreApplication
 
     Rectangle {
-        height: parent.height
-        width: parent.width
-        id: root
         color: "#d0d0d0"
         anchors.fill: parent
-//        opacity: 1 - backendHelper.opacity
 
-        Grid
-        {
+        Grid {
             columns: 2
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: -25
             spacing: 20
+            verticalItemAlignment: Grid.AlignVCenter
 
-            // Row 1
             Text {
-                id: idCreateLastApparatusPdf
+                id: editionLabel
+                width: 150
+                text: qsTr("Edizione")
+                font.pointSize: 15
+            }
+
+            StyleMGComboBox {
+                id: editionCombo
+                objectName: "editionComboBox"
+                Accessible.name: editionLabel.text
+                model: eventData.coreApplication.editions
+                currentValue: eventData.coreApplication.currentEvent
+                onActivated: {
+                    if (!eventData.coreApplication.selectEvent(editionCombo.currentValue))
+                        editionCombo.currentIndex = editionCombo.indexOfValue(eventData.coreApplication.currentEvent)
+                }
+            }
+
+            Text {
                 width: 150
                 text: qsTr("Attrezzo finale")
                 font.pointSize: 15
             }
 
             StyleMGPushButton {
-                id:btnCreateLastApparatusPdf
                 objectName: "btnCreateLastApparatusPdf"
                 width: 100
                 buttonText: "Crea PDF"
             }
 
-            // Row 2
             Text {
-                id: idCreatePdf
                 width: 150
                 text: qsTr("Classifiche")
                 font.pointSize: 15
             }
 
             StyleMGPushButton {
-                id:btnCreatePdf
                 objectName: "btnCreatePdf"
                 width: 100
                 buttonText: "Crea PDF"

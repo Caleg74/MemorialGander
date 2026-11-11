@@ -1,5 +1,14 @@
 #include "chronolistdata.h"
 
+namespace {
+QString formatOptionalScore(float score)
+{
+    const QString text = QString::number(score, 'f', 3);
+    return text == QStringLiteral("0.000") || text == QStringLiteral("-0.000")
+               ? QStringLiteral("-") : text;
+}
+}
+
 ChronoListData::ChronoListData()
     : m_strGender("")
     , m_strApparatus("")
@@ -86,6 +95,16 @@ QString ChronoListData::getExecutionScore() const
     return QString::number(m_sScore.ExecutionScore, 'f', 3);
 }
 
+void ChronoListData::setBonusScore(float score)
+{
+    m_sScore.BonusScore = score;
+}
+
+QString ChronoListData::getBonusScore() const
+{
+    return formatOptionalScore(m_sScore.BonusScore);
+}
+
 void ChronoListData::setPenaltyScore(const float p_fPenaltyScore)
 {
     m_sScore.PenaltyScore = p_fPenaltyScore;
@@ -93,7 +112,7 @@ void ChronoListData::setPenaltyScore(const float p_fPenaltyScore)
 
 QString ChronoListData::getPenaltyScore() const
 {
-    return QString::number(m_sScore.PenaltyScore, 'f', 3);
+    return formatOptionalScore(m_sScore.PenaltyScore);
 }
 
 void ChronoListData::setFinalScore(const float p_fFinalScore)
@@ -139,6 +158,7 @@ bool operator== (const ChronoListData& lhs, const ChronoListData& rhs)
       && (lhs.getApparatusName() == rhs.getApparatusName())
       && (lhs.getDifficultyScore() == rhs.getDifficultyScore())
       && (lhs.getExecutionScore() == rhs.getExecutionScore())
+      && (lhs.getBonusScore() == rhs.getBonusScore())
       && (lhs.getPenaltyScore() == rhs.getPenaltyScore())
       && (lhs.getFinalScore() == rhs.getFinalScore()))
     {

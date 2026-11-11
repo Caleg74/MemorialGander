@@ -1,18 +1,18 @@
-import QtQuick 2.0
-import QtQuick.Controls 2.0
-//import QtQuick.Particles 2.0
+import QtQuick
 
 Item {
     id: root
     property string finalScore;
     property string difficultyScore;
+    property string scoreDetails
+    readonly property bool hasDetails: scoreDetails.length > 0
     property bool separatorVisible: true;
     property int fontSize: 15;
     property bool fontBold: false;
     property bool isFinalApparatus: false;
     property bool latestScore
 
-    width: parent.widthh
+    width: parent.width
     height: parent.height
 
     onLatestScoreChanged: {
@@ -28,6 +28,8 @@ Item {
 //        height: parent.height
         anchors.fill: parent
         anchors.margins: 5
+        anchors.topMargin: root.hasDetails ? 0 : 5
+        anchors.bottomMargin: root.hasDetails ? 0 : 5
 
         Rectangle {
             id: scoreBackground
@@ -49,9 +51,9 @@ Item {
                 id: finalScore
                 renderType: Text.NativeRendering
                 text: root.finalScore
-                font.pointSize: fontSize
-                font.bold: fontBold
-                font.italic: isFinalApparatus
+                font.pointSize: root.fontSize
+                font.bold: root.fontBold
+                font.italic: root.isFinalApparatus
                 color:  "#0a3f60"
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
@@ -64,14 +66,17 @@ Item {
             Text {
                 id: difficultyScore
                 renderType: Text.NativeRendering
-                text: root.difficultyScore // root.difficultyScore !== "0" ? "("+ root.difficultyScore +")" : ""
-                font.pointSize: fontSize * 3/4
+                text: root.hasDetails ? root.scoreDetails : root.difficultyScore
+                font.pointSize: root.hasDetails ? Math.max(root.fontSize, 11) : root.fontSize * 3 / 4
+                fontSizeMode: root.hasDetails ? Text.Fit : Text.FixedSize
+                minimumPointSize: 5
                 font.bold: false
-                font.italic: isFinalApparatus
+                font.italic: root.isFinalApparatus
                 color:  "#0a3f60"
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
-                width: parent.width * 2 /5
+                width: root.hasDetails ? Math.max(0, parent.width - finalScore.implicitWidth - 6)
+                                       : parent.width * 2 / 5
                 height: parent.height
                 anchors.right: parent.right
             }
@@ -81,7 +86,7 @@ Item {
             width: 2    // just a line
             height: parent.height
             color: "#d0d0d0"
-            visible: separatorVisible
+            visible: root.separatorVisible
             anchors.right: parent.right
         }
     }

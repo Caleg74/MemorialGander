@@ -5,9 +5,24 @@
 #include <QStringList>
 #include <QUrl>
 #include <QHash>
+#include <algorithm>
+#include <cmath>
 #include <utility>
 #include "dbinterface.h"
 
+namespace {
+constexpr qreal sponsorFooterTop = 750.0;
+// Allow for the widest table and its borders when scaling both pages.
+constexpr qreal allroundLayoutWidth = 790.0;
+
+QString compactScore(float score)
+{
+    QString formatted = QString::number(score, 'f', 3);
+    while (formatted.endsWith(u'0') && !formatted.endsWith(u".0"))
+        formatted.chop(1);
+    return formatted;
+}
+}
 
 CreatePdf::CreatePdf()
  : QObject()
@@ -29,11 +44,12 @@ void CreatePdf::PrintRanking()
     // 1st update the scores
     m_cRank.updateAllroundScores();
 
-    bool bWithLogo = true;
+    const int edition = dbInterface::Instance()->getCurrentEvent();
+    const bool withLogo = true;
 
     QString strFileName = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
 
-    strFileName += "/MemorialGander2026.pdf";
+    strFileName += QStringLiteral("/MemorialGander%1.pdf").arg(edition);
 
     m_printer.setOutputFormat(QPrinter::PdfFormat);
     m_printer.setPageSize(QPageSize::A4);
@@ -44,22 +60,22 @@ void CreatePdf::PrintRanking()
         return;
     }
 
-   m_iPageNumber = 1;
-   PrintMenAllround(bWithLogo);
+    m_iPageNumber = 1;
+    PrintMenAllround(withLogo);
 
     if (! m_printer.newPage()) {
         qWarning("failed in flushing page to disk, disk full?");
     }
 
-    PrintWomenAllround(bWithLogo);
+    PrintWomenAllround(withLogo);
 
     if (! m_printer.newPage()) {
         qWarning("failed in flushing page to disk, disk full?");
     }
 
-    PrintAllSingleApparatusMen(bWithLogo);
+    PrintAllSingleApparatusMen(withLogo);
 
-    PrintAllSingleApparatusWomen(bWithLogo);
+    PrintAllSingleApparatusWomen(withLogo);
 
     m_painter.end();
 
@@ -71,8 +87,9 @@ void CreatePdf::PrintLastApparatusStartOrder()
     retriveGymnastList();
     m_cRank.updateAllroundScores();
 
+    const int edition = dbInterface::Instance()->getCurrentEvent();
     const QString strFileName = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)
-                              + "/MemorialGander2026_FinalApparatusStartingOrder.pdf";
+                              + QStringLiteral("/MemorialGander%1_FinalApparatusStartingOrder.pdf").arg(edition);
 
     m_printer.setOutputFormat(QPrinter::PdfFormat);
     m_printer.setPageSize(QPageSize::A4);
@@ -229,7 +246,7 @@ void CreatePdf::PrintAllSingleApparatusMen(bool p_bHFImages)
         PrintHeader(p_bHFImages, out);
         m_cRank.updateSingleScores(static_cast<ApparatusList::EApparatusMen>(apparatus));
         PrintSingleMApparatusTableTitle(out, static_cast<ApparatusList::EApparatusMen>(apparatus));
-        PrintSingleMApparatusTableBody(out);
+        PrintSingleApparatusTableBody(out, *m_cRank.getSingleMenList());
         PrintFooter(p_bHFImages, out);
 
         out.flush();
@@ -251,7 +268,7 @@ void CreatePdf::PrintAllSingleApparatusWomen(bool p_bHFImages)
         PrintHeader(p_bHFImages, out);
         m_cRank.updateSingleScores(static_cast<ApparatusList::EApparatusWomen>(apparatus));
         PrintSingleWApparatusTableTitle(out, static_cast<ApparatusList::EApparatusWomen>(apparatus));
-        PrintSingleWApparatusTableBody(out);
+        PrintSingleApparatusTableBody(out, *m_cRank.getSingleWomenList());
         PrintFooter(p_bHFImages, out);
 
         out.flush();
@@ -333,6 +350,12 @@ void CreatePdf::PrintAllroundTableBody(QTextStream& out, const QList<AthleteData
         const QString value = score.trimmed();
         return value == QStringLiteral("-") ? QStringLiteral("0.000") : value;
     };
+    const auto detailLine = [](const QString &left, const QString &rightLabel, float rightScore) {
+        const QString value = compactScore(rightScore);
+        const QString right = value == QStringLiteral("0.0") || value == QStringLiteral("-0.0")
+                                  ? QString{} : rightLabel + value;
+        return left.leftJustified(9, u'\u00a0') + right.leftJustified(8, u'\u00a0');
+    };
     for (const auto &gymnast : gymnasts) {
         out << "<tr><td align=\"center\" style=\"font-size:10px;font-weight:bold;\">"
             << gymnast.getRank() << "</td>"
@@ -346,10 +369,19 @@ void CreatePdf::PrintAllroundTableBody(QTextStream& out, const QList<AthleteData
             out << "<td align=\"center\"><span style=\"font-size:11px;font-weight:bold;\">"
                 << final << "</span>";
             if (final != QStringLiteral("-")) {
-                out << "<br/><span style=\"font-size:8px;font-weight:normal;\">"
-                    << "D " << numericScore(gymnast.getDifficultyScore(apparatus))
-                    << "<br/>E " << numericScore(gymnast.getExecutionScore(apparatus))
-                    << "</span>";
+                const bool isApparatus = apparatus != ApparatusList::AGTotalScore;
+                const QString difficulty = QStringLiteral("D=") + numericScore(gymnast.getDifficultyScore(apparatus));
+                const QString execution = QStringLiteral("E=") + numericScore(gymnast.getExecutionScore(apparatus));
+                out << "<br/><span style=\"font-family:Consolas;font-size:9px;font-weight:normal;\">";
+                if (isApparatus) {
+                    out << detailLine(difficulty, QStringLiteral("B="), gymnast.getBonusScore(apparatus))
+                        << "<br/>"
+                        << detailLine(execution, QStringLiteral("P="),
+                                      -std::abs(gymnast.getPenaltyScore(apparatus).toFloat()));
+                } else {
+                    out << difficulty << "<br/>" << execution;
+                }
+                out << "</span>";
             }
             out << "</td>";
         }
@@ -400,38 +432,57 @@ void CreatePdf::PrintSingleMApparatusTableTitle(QTextStream& out, ApparatusList:
     fileIn.close();
 }
 
-void CreatePdf::PrintSingleMApparatusTableBody(QTextStream& out)
+void CreatePdf::PrintSingleApparatusTableBody(QTextStream& out, const QList<SingleMWData>& gymnasts)
 {
-    QList<SingleMWData>* pMenList = m_cRank.getSingleMenList();
+    constexpr QChar noteSpace{u'\u00a0'};
+    const QString bonusPrefix = QStringLiteral("\u00a0\u00a0B=");
+    const QString penaltyPrefix = QStringLiteral("\u00a0\u00a0P=-");
+    const auto formatPenalty = [](const SingleMWData &gymnast) {
+        QString penalty = gymnast.getPenaltyScore();
+        if (penalty.endsWith(u"00"))
+            penalty.chop(2);
+        return penalty;
+    };
 
-    for (int i=0; i<pMenList->size(); i++)
+    // Size the optional notes from the scores printed on this apparatus page.
+    constexpr qsizetype minimumValueWidth = 3; // 0.0
+    qsizetype bonusValueWidth = minimumValueWidth;
+    qsizetype penaltyValueWidth = minimumValueWidth;
+    for (const auto &gymnast : gymnasts) {
+        if (gymnast.getFinalScore() == QStringLiteral("0.000"))
+            continue;
+        bonusValueWidth = std::max(bonusValueWidth, compactScore(gymnast.getBonusScore()).size());
+        penaltyValueWidth = std::max(penaltyValueWidth, formatPenalty(gymnast).size());
+    }
+
+    for (const auto& gymnast : gymnasts)
     {
         // Skip if final score is 0
-        if (pMenList->at(i).getFinalScore() != "0.000")
-        {
-            out << "\t<tr>" << Qt::endl;
-            out << "\t  <th rowspan=\"2\" valign=\"middle\">"
-                << pMenList->at(i).getRank()
-                <<"</th> <!-- Rank -->" << Qt::endl;
-            out << "\t  <th rowspan=\"2\" valign=\"middle\" align=\"left\" width=\"180\">"
-                << pMenList->at(i).getNameFull()
-                << "(" << pMenList->at(i).getNation() << ")"
-                << "</th>" << Qt::endl;
-            out << "\t  <th align=\"center\">"
-                << pMenList->at(i).getFinalScore()
-                <<"</th> <!-- Single appparatus -->" << Qt::endl;
-            out << "\t</tr>" << Qt::endl;
+        const QString finalScore = gymnast.getFinalScore();
+        if (finalScore == QStringLiteral("0.000"))
+            continue;
 
-            out << "\t<tr>" << Qt::endl;
-            out << "\t  <td align=\"center\"><small>(D="
-                << pMenList->at(i).getDifficultyScore()
-                <<", E="
-                << pMenList->at(i).getExecutionScore()
-                <<", P="
-                << pMenList->at(i).getPenaltyScore()
-                << ")</small></td> <!-- Single appparatus -->" << Qt::endl;
-            out << "\t</tr>" << Qt::endl;
-        }
+        const QString penalty = formatPenalty(gymnast);
+        const QString bonus = compactScore(gymnast.getBonusScore());
+        const QString bonusNote = bonus == QStringLiteral("0.0")
+                                      ? QString{} : bonusPrefix + bonus;
+        const QString penaltyNote = penalty == QStringLiteral("0.0")
+                                        ? QString{} : penaltyPrefix + penalty;
+
+        out << "\t<tr>\n"
+            << "\t  <th rowspan=\"2\" valign=\"middle\">" << gymnast.getRank() << "</th>\n"
+            << "\t  <th rowspan=\"2\" valign=\"middle\" align=\"left\" width=\"180\">"
+            << gymnast.getNameFull() << "(" << gymnast.getNation() << ")</th>\n"
+            << "\t  <th align=\"center\">" << finalScore << "</th>\n"
+            << "\t</tr>\n"
+            << "\t<tr>\n"
+            << "\t  <td align=\"center\"><small><span style=\"font-family:Consolas;\">D="
+            << gymnast.getDifficultyScore()
+            << QStringLiteral("\u00a0\u00a0E=") << gymnast.getExecutionScore()
+            << bonusNote.leftJustified(bonusPrefix.size() + bonusValueWidth, noteSpace)
+            << penaltyNote.leftJustified(penaltyPrefix.size() + penaltyValueWidth, noteSpace)
+            << "</span></small></td>\n"
+            << "\t</tr>\n";
     }
 }
 
@@ -471,41 +522,6 @@ void CreatePdf::PrintSingleWApparatusTableTitle(QTextStream& out, ApparatusList:
     fileIn.close();
 }
 
-void CreatePdf::PrintSingleWApparatusTableBody(QTextStream& out)
-{
-    QList<SingleMWData>* pWomenList = m_cRank.getSingleWomenList();
-
-    for (int i=0; i<pWomenList->size(); i++)
-    {
-        // Skip if final score is 0
-        if (pWomenList->at(i).getFinalScore() != "0.000")
-        {
-            out << "\t<tr>" << Qt::endl;
-            out << "\t  <th rowspan=\"2\" valign=\"middle\">"
-                << pWomenList->at(i).getRank()
-                <<"</th> <!-- Rank -->" << Qt::endl;
-            out << "\t  <th rowspan=\"2\" valign=\"middle\" align=\"left\" width=\"180\">"
-                << pWomenList->at(i).getNameFull()
-                << "(" << pWomenList->at(i).getNation() << ")"
-                << "</th>" << Qt::endl;
-            out << "\t  <th align=\"center\">"
-                << pWomenList->at(i).getFinalScore()
-                <<"</th> <!-- Single appparatus -->" << Qt::endl;
-            out << "\t</tr>" << Qt::endl;
-
-            out << "\t<tr>" << Qt::endl;
-            out << "\t  <td align=\"center\"><small>(D="
-                << pWomenList->at(i).getDifficultyScore()
-                <<", E="
-                << pWomenList->at(i).getExecutionScore()
-                <<", P="
-                << pWomenList->at(i).getPenaltyScore()
-                << ")</small></td> <!-- Single appparatus -->" << Qt::endl;
-            out << "\t</tr>" << Qt::endl;
-        }
-    }
-}
-
 void CreatePdf::AddHeader(bool p_bHFImages)
 {
     if (p_bHFImages)
@@ -513,15 +529,23 @@ void CreatePdf::AddHeader(bool p_bHFImages)
         QRectF target(20.0, 10.0, 496.0/3, 239.0/3);
         QRectF source(0.0, 0.0, 496.0, 239.0);
         QImage image(":/pdf/IN_Header_LogoMG.png");
-        m_painter.drawImage(target, image, source);  // Paint the mask onto the image
+        m_painter.drawImage(target, image, source);
+        return;
     }
+
+    m_painter.save();
+    m_painter.setFont(QFont(QStringLiteral("Arial"), 12, QFont::Bold));
+    m_painter.setPen(Qt::black);
+    m_painter.drawText(QPointF(20.0, 38.0), QStringLiteral("Memorial Arturo Gander %1")
+                           .arg(dbInterface::Instance()->getCurrentEvent()));
+    m_painter.restore();
 }
 
 void CreatePdf::AddFooter(bool p_bHFImages)
 {
     if (p_bHFImages)
     {
-        QRectF target(20.0, 750.0, 2480.0/3, 283.0/3);
+        QRectF target(20.0, sponsorFooterTop, 2480.0/3, 283.0/3);
         QRectF source(0.0, 0.0, 2480.0, 283.0);
         QImage image(":/pdf/IN_Footer_Sponsors.png");
         m_painter.drawImage(target, image, source);  // Paint the mask onto the image
@@ -547,10 +571,15 @@ void CreatePdf::DrawAllroundHtml(QString html)
     // Remove it only on the two overall pages, which define their own typography.
     html.remove(QStringLiteral("<font face=\"arial\" size=\"2\">"));
     html.remove(QStringLiteral("</font>"));
-    DrawHtml(html);
+    html.remove(QStringLiteral("<br>"));
+    constexpr qreal left = 20;
+    constexpr qreal top = 105;
+    constexpr qreal footerGap = 12;
+    DrawHtml(html, QRectF(left, top, m_painter.viewport().width() - 2 * left,
+                          sponsorFooterTop - top - footerGap));
 }
 
-void CreatePdf::DrawHtml(const QString& html)
+void CreatePdf::DrawHtml(const QString& html, const QRectF& contentArea)
 {
     static const QStringList apparatusImageNames = {
         QStringLiteral("BalanceBeam_bw.png"),
@@ -580,5 +609,18 @@ void CreatePdf::DrawHtml(const QString& html)
     resourceHtml.replace(QStringLiteral("../MGServer/pdf/"),
                          QStringLiteral("qrc:/pdf/"));
     doc.setHtml(resourceHtml);
+    if (contentArea.isEmpty()) {
+        doc.drawContents(&m_painter);
+        return;
+    }
+
+    doc.setDocumentMargin(0);
+    const QSizeF size = doc.size();
+    const qreal scale = std::min({1.0, contentArea.width() / std::max(allroundLayoutWidth, size.width()),
+                                  contentArea.height() / size.height()});
+    m_painter.save();
+    m_painter.translate(contentArea.topLeft());
+    m_painter.scale(scale, scale);
     doc.drawContents(&m_painter);
+    m_painter.restore();
 }

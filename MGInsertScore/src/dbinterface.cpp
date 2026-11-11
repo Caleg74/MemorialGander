@@ -41,6 +41,42 @@ int dbInterface::getFinalApparatusId(int athleteId, int eventId)
     return query.next() ? query.value(0).toInt() : 0;
 }
 
+std::optional<dbInterface::ExistingScore> dbInterface::getExistingScore(int eventId, int athleteId, int apparatusId)
+{
+    if (!m_bInitialized || eventId <= 0 || athleteId <= 0 || apparatusId <= 0)
+        return std::nullopt;
+
+    QSqlQuery query(QSqlDatabase::database(QStringLiteral("ConnMG")));
+    if (!query.prepare(QStringLiteral(
+            "SELECT difficulty_score, CAST(ABS(penalty_score) AS text), CAST(bonus_score AS text) FROM scores "
+            "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?"))) {
+        qWarning() << "Cannot prepare existing score query:" << query.lastError();
+        return std::nullopt;
+    }
+
+    query.addBindValue(eventId);
+    query.addBindValue(athleteId);
+    query.addBindValue(apparatusId);
+    if (!query.exec()) {
+        qWarning() << "Cannot load existing score:" << query.lastError();
+        return std::nullopt;
+    }
+    if (!query.next())
+        return std::nullopt;
+
+    const auto optionalPoints = [](const QVariant &value) {
+        const QString points = value.toString();
+        if (points.isEmpty())
+            return QStringLiteral("0.0");
+
+        bool isWhole = false;
+        const qlonglong whole = points.toLongLong(&isWhole);
+        return isWhole ? QString::number(whole) + QStringLiteral(".0") : points;
+    };
+    return ExistingScore{query.value(0).toDouble(), optionalPoints(query.value(1)),
+                         optionalPoints(query.value(2))};
+}
+
 int dbInterface::getNationId(QString& p_strNiceName)
 {
     int iId = 0;
@@ -76,6 +112,7 @@ bool dbInterface::setNewScore(const int p_iEventId,
                               const int p_iApparatusId,
                               const float p_fDifficultyScore,
                               const float p_fExecutionScore,
+                              const float p_fBonusScore,
                               const float p_fPenaltyScore,
                               const float p_fFinalScore,
                               const bool p_bFinalApparatus)
@@ -84,13 +121,15 @@ bool dbInterface::setNewScore(const int p_iEventId,
     {
         QSqlDatabase db = QSqlDatabase::database("ConnMG");
         QSqlQuery query(db);
-        query.prepare("INSERT INTO scores (sport_event_id, athlete_id, apparatus_id, difficulty_score, execution_score, penalty_score, final_score, final_apparatus) "
-                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        query.prepare("INSERT INTO scores (sport_event_id, athlete_id, apparatus_id, difficulty_score, "
+                      "execution_score, bonus_score, penalty_score, final_score, final_apparatus) "
+                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         query.addBindValue(p_iEventId);
         query.addBindValue(p_iAthleteId);
         query.addBindValue(p_iApparatusId);
         query.addBindValue(p_fDifficultyScore);
         query.addBindValue(p_fExecutionScore);
+        query.addBindValue(p_fBonusScore);
         query.addBindValue(p_fPenaltyScore);
         query.addBindValue(p_fFinalScore);
         query.addBindValue(p_bFinalApparatus);
@@ -106,6 +145,7 @@ bool dbInterface::setNewScore(const int p_iEventId,
                                        << p_fDifficultyScore << ", "
                                        << p_fExecutionScore << ", "
                                        << p_fPenaltyScore << ", "
+                                       << p_fBonusScore << ", "
                                        << p_fFinalScore << ", "
                                        << strFinalApparatus;
         }
@@ -117,6 +157,7 @@ bool dbInterface::setNewScore(const int p_iEventId,
                                                 << p_fDifficultyScore << ", "
                                                 << p_fExecutionScore << ", "
                                                 << p_fPenaltyScore << ", "
+                                                << p_fBonusScore << ", "
                                                 << p_fFinalScore << ", "
                                                 << strFinalApparatus;
             qCritical() << query.lastError();
@@ -135,6 +176,7 @@ bool dbInterface::updateScore(const int p_iEventId,
                               const int p_iApparatusId,
                               const float p_fDifficultyScore,
                               const float p_fExecutionScore,
+                              const float p_fBonusScore,
                               const float p_fPenaltyScore,
                               const float p_fFinalScore,
                               const bool p_bFinalApparatus)
@@ -147,10 +189,11 @@ bool dbInterface::updateScore(const int p_iEventId,
         //SET column1=value1,column2=value2,...
         //WHERE some_column=some_value;
         query.prepare("UPDATE scores SET difficulty_score = ?, execution_score = ?, "
-                      "penalty_score = ?, final_score = ?, final_apparatus = ? "
+                      "bonus_score = ?, penalty_score = ?, final_score = ?, final_apparatus = ? "
                       "WHERE sport_event_id = ? AND athlete_id = ? AND apparatus_id = ?");
         query.addBindValue(p_fDifficultyScore);
         query.addBindValue(p_fExecutionScore);
+        query.addBindValue(p_fBonusScore);
         query.addBindValue(p_fPenaltyScore);
         query.addBindValue(p_fFinalScore);
         query.addBindValue(p_bFinalApparatus);
@@ -170,6 +213,7 @@ bool dbInterface::updateScore(const int p_iEventId,
                                          << p_fDifficultyScore << ", "
                                          << p_fExecutionScore << ", "
                                          << p_fPenaltyScore << ", "
+                                         << p_fBonusScore << ", "
                                          << p_fFinalScore << ", "
                                          << strFinalApparatus;
         }
@@ -181,6 +225,7 @@ bool dbInterface::updateScore(const int p_iEventId,
                                                  << p_fDifficultyScore << ", "
                                                  << p_fExecutionScore << ", "
                                                  << p_fPenaltyScore << ", "
+                                                 << p_fBonusScore << ", "
                                                  << p_fFinalScore << ", "
                                                  << strFinalApparatus;
             qCritical() << query.lastError();

@@ -56,7 +56,7 @@ Item {
 
         Item // some sort of a Row
         {
-            property int apparatusWidth: parent.width / 2.5
+            readonly property real apparatusWidth: parent.width * 0.46
             anchors.margins: 5
             anchors.fill: parent
     //                height: parent.height

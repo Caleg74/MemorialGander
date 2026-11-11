@@ -7,25 +7,54 @@
 #include "apparatuslist.h"
 #include "messagebox.h"
 #include "saveforcescore.h"
+#include <algorithm>
+#include <iterator>
 
 CoreApplication::CoreApplication(QObject *parent)
     : QObject(parent)
-    , m_pAppEngine(NULL)
-    , m_cPdf()
 {
-
 }
 
-CoreApplication::~CoreApplication()
+QList<int> CoreApplication::editions() const
 {
+    return {2016, 2018, 2022, 2024, 2026, 2028};
+}
 
+int CoreApplication::getCurrentEvent() const
+{
+    return dbInterface::Instance()->getCurrentEvent();
+}
+
+bool CoreApplication::selectEvent(int event)
+{
+    if (!editions().contains(event))
+        return false;
+
+    auto *database = dbInterface::Instance();
+    if (!database->saveActiveEvent(event)) {
+        MessageBox message;
+        message.SetTitle(tr("Edizione"));
+        message.SetText(tr("Salvataggio dell'edizione %1 non riuscito.").arg(event));
+        message.Show();
+        return false;
+    }
+    if (event == getCurrentEvent())
+        return true;
+
+    database->setCurrentEvent(event);
+    if (m_qSortProxySelectedGymnast)
+        GymnastSelectModel::Instance()->reload();
+
+    emit currentEventChanged();
+    return true;
 }
 
 void CoreApplication::Init(QQmlApplicationEngine& p_qEngine)
 {
+    auto *database = dbInterface::Instance();
     bool bDBOk = true;
     // Init the DB connection
-    if (dbInterface::Instance()->loadDriver())
+    if (database->loadDriver())
     {
         qInfo() << "QOBCD driver loaded successfully";
     }
@@ -35,10 +64,20 @@ void CoreApplication::Init(QQmlApplicationEngine& p_qEngine)
     }
 
     // initialize the database
-    if (!dbInterface::Instance()->initDb(false))
+    if (!database->initDb(false))
     {
         bDBOk = false;
     }
+
+    const auto availableEditions = editions();
+    int initialEdition = database->getActiveEventYear();
+    if (!availableEditions.contains(initialEdition)) {
+        const auto nextEdition = std::upper_bound(availableEditions.cbegin(),
+                                                  availableEditions.cend(), getCurrentEvent());
+        initialEdition = nextEdition == availableEditions.cbegin()
+                             ? availableEditions.constFirst() : *std::prev(nextEdition);
+    }
+    database->setCurrentEvent(initialEdition);
 
     // save it as a class member
     m_pAppEngine = &p_qEngine;

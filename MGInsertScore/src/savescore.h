@@ -14,6 +14,7 @@ public slots:
                      QString p_strApparatus,
                      QString p_strDifficultyScore,
                      QString p_strExecutionScore,
+                     const QString &bonusScore,
                      QString p_strPenaltyScore,
                      QString p_strFinalScore,
                      bool p_bFinalApparatus);
@@ -33,6 +34,7 @@ private:
                   QString& p_strApparatus,
                   float p_fDifficultyScore,
                   float p_fExecutionScore,
+                  float p_fBonusScore,
                   float p_fPenaltyScore,
                   float p_fFinalScore,
                   bool p_bFinalApparatus);

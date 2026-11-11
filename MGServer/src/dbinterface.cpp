@@ -1,5 +1,4 @@
 #include "dbinterface.h"
-#include <QDate>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
@@ -22,6 +21,65 @@ dbInterface* dbInterface::Instance()
     }
 
     return sm_pInstance;
+}
+
+bool dbInterface::saveActiveEvent(int year)
+{
+    if (!m_bInitialized)
+        return false;
+
+    QSqlDatabase database = QSqlDatabase::database(QStringLiteral("ConnMG"));
+    if (!database.transaction()) {
+        qWarning() << "Cannot start the edition change:" << database.lastError();
+        return false;
+    }
+
+    QSqlQuery query(database);
+    const auto rollback = [&] {
+        query.finish();
+        if (!database.rollback())
+            qCritical() << "Cannot roll back the edition change:" << database.lastError();
+        return false;
+    };
+    const auto executeFor = [&query](const QString &statement, int value) {
+        if (!query.prepare(statement))
+            return false;
+        query.addBindValue(value);
+        return query.exec();
+    };
+
+    if (!query.exec(QStringLiteral("LOCK TABLE sport_event IN SHARE ROW EXCLUSIVE MODE NOWAIT"))) {
+        qWarning() << "Cannot lock the editions for update:" << query.lastError();
+        return rollback();
+    }
+
+    if (!executeFor(QStringLiteral("SELECT MIN(id) FROM sport_event "
+                                   "WHERE EXTRACT(YEAR FROM year) = ? HAVING COUNT(*) = 1"), year)
+        || !query.next()) {
+        qWarning() << "Cannot resolve a unique event for edition" << year << query.lastError();
+        return rollback();
+    }
+    const int eventId = query.value(0).toInt();
+    query.finish();
+
+    if (!executeFor(QStringLiteral("UPDATE sport_event SET is_current_event = FALSE "
+                                   "WHERE id <> ? AND is_current_event IS TRUE"), eventId)) {
+        qWarning() << "Cannot clear the previous active edition:" << query.lastError();
+        return rollback();
+    }
+
+    if (!executeFor(QStringLiteral("UPDATE sport_event SET is_current_event = TRUE WHERE id = ?"), eventId)
+        || query.numRowsAffected() != 1) {
+        qWarning() << "Cannot mark edition" << year << "as active:" << query.lastError();
+        return rollback();
+    }
+    query.finish();
+
+    if (!database.commit()) {
+        qWarning() << "Cannot commit the active edition:" << database.lastError();
+        return rollback();
+    }
+    return true;
 }
 
 

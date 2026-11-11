@@ -37,12 +37,14 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-import QtQuick 2.0
-import QtQuick.Window 2.2
+import QtQuick
+import QtQuick.Window
+import Memorial.Server
 import "qrc:/qml"
 
 Window {
     id: window
+    required property CoreApplication coreApplication
     width: 900
     height: 480
     visible: true
@@ -105,6 +107,7 @@ Window {
 
                 EventData
                 {
+                    coreApplication: window.coreApplication
                     width: parent.width
                     height: parent.height
                     anchors.centerIn: parent

@@ -21,6 +21,8 @@ public:
     /** Singleton */
     static GymnastSelectModel* Instance();
 
+    void reload();
+
     int rowCount(const QModelIndex & parent = QModelIndex()) const;
 
     QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
@@ -42,9 +44,7 @@ private:
 
     QModelIndex indexFromItem( const GymnastSelectData* item) const;
 
-    GymnastSelectModel(QObject *parent = 0);
-
-    void RetrieveGymnastList();
+    explicit GymnastSelectModel(QObject *parent = nullptr);
 
     static GymnastSelectModel* sm_pInstance;   ///< Singleton
 

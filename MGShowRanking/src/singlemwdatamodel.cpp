@@ -93,6 +93,7 @@ void SingleMWDataModel::updateScores()
         iter->setFinalScore(scores.FinalScore);
         iter->setDifficultyScore(scores.DifficultyScore);
         iter->setExecutionScore(scores.ExecutionScore);
+        iter->setBonusScore(scores.BonusScore);
         iter->setPenaltyScore(scores.PenaltyScore);
         iter->setForceScore(scores.ForceScore);
     }
@@ -100,7 +101,8 @@ void SingleMWDataModel::updateScores()
     RankingRules::sortAndAssignRanks(m_rankingList);
 
     // update all model
-    emit dataChanged(index(0, 0), index(rowCount() - 1, 0));
+    if (!m_rankingList.isEmpty())
+        emit dataChanged(index(0, 0), index(rowCount() - 1, 0));
 }
 
 
@@ -148,8 +150,14 @@ QVariant SingleMWDataModel::data(const QModelIndex & index, int role) const {
         return gymnast.getNameFull();
     else if (role == FlagImageRole)
         return gymnast.getImagePath();
-    else if (role == DifficultyScoreSingleMW)
-        return gymnast.getDifficultyScore();
+    else if (role == ScoreDetailsSingleMW) {
+        QString penalty = gymnast.getPenaltyScore(1);
+        if (penalty != QStringLiteral("0.0"))
+            penalty.prepend(u'-');
+        return QStringLiteral("D=%1  E=%2\nB=%3  P=%4")
+            .arg(gymnast.getDifficultyScore(), gymnast.getExecutionScore(2),
+                 QString::number(gymnast.getBonusScore(), 'f', 1), penalty);
+    }
     else if (role == FinalScoreSingleMW)
         return gymnast.getFinalScore();
 
@@ -162,7 +170,7 @@ QHash<int, QByteArray> SingleMWDataModel::roleNames() const {
     roles[RankRole             ] = "Rank";
     roles[NameFullRole         ] = "NameFull";
     roles[FlagImageRole        ] = "FlagImage";
-    roles[DifficultyScoreSingleMW   ] = "DifficultyScore_SingleMW";
+    roles[ScoreDetailsSingleMW] = "ScoreDetails_SingleMW";
     roles[FinalScoreSingleMW   ] = "FinalScore_SingleMW";
 
     return roles;
